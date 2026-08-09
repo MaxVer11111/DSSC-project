@@ -271,6 +271,131 @@ with essential upgrades.
 6. **VP 组合**: 将 LP + LRN + Issuer 三个 VC 组合为 Verifiable Presentation
 7. **签名提交**: 将 VP 签名为 VP-JWT 后 POST
 
+### 6.7 Wizard 非生产模式复测：虚构 Participant 身份失败
+
+> 测试时间：2026-08-09（UTC+8）<br>
+> Wizard：`https://wizard.lab.gaia-x.eu/`，页面版本 v2.2.0<br>
+> 测试模式：关闭 “I'll use my own private key”，使用非生产 / fake Participant 流程
+
+本轮测试原计划继续使用项目中的虚构法人身份：
+
+| 字段 | 输入值 |
+|------|--------|
+| Legal name | `Energy Data Provider Ltd.` |
+| Headquarters country | `CN` |
+| Legal address country | `CN` |
+| 原项目注册号占位值 | `DEMO-ENERGY-001` |
+
+Wizard 的非生产流程虽然不要求用户自备私钥、X.509 证书和 DID 基础设施，但 **Legal Person 步骤仍然强制要求 LRN**，且类型只能是：
+
+- `EORI`
+- `vatID`
+- `leiCode`
+
+使用 `DEMO-ENERGY-001` 作为 `leiCode` 时，Wizard 显示：
+
+```text
+Invalid leiCode
+```
+
+为确认它是否只检查字符串格式，进一步构造了一个满足 LEI 长度和校验位规则、但未在真实登记数据中注册的测试值：
+
+```text
+529900DEMOENERGY0036
+```
+
+Wizard 仍然显示 `Invalid leiCode`，无法进入 Terms & Conditions 步骤。这说明当前托管 Wizard 不只是检查 LRN 的表面格式，还要求该号码能够通过其登记号验证流程。
+
+因此，更准确的失败结论是：
+
+> 尝试通过 Wizard 为虚构的 `Energy Data Provider Ltd.` 获得演示 Participant 身份 / DID 绑定失败；流程在 Legal Person 的 LRN 校验阶段即被拦截，尚未形成属于该虚构公司的有效 LRN VC、DID 或 Participant Credential。
+
+这也证明：**非生产模式免除了自建密钥和 DID 基础设施，但没有取消 Participant 与有效法人登记号之间的语义绑定要求。** 虚构名称配合虚构 LRN 不能直接完成官方托管 Wizard 的 onboarding 流程。
+
+### 6.8 成功替代路径：使用 Gaia-X 官方样例身份
+
+为了验证 `LegalPerson VC + Issuer/T&C VC + LRN VC → VP-JWT → Compliance API` 的技术链路，最终改用 Gaia-X 官方公开样例身份：
+
+| 字段 | 最终输入值 |
+|------|------------|
+| Legal name | `Gaia-X European Association for Data and Cloud AISBL` |
+| LRN type | `vatID` |
+| VAT | `BE0762747721` |
+| Headquarters country | `BE` |
+| Legal address country | `BE` |
+
+Wizard 随后成功完成以下流程：
+
+```text
+Legal Person
+  → Terms & Conditions
+  → Sign
+  → 生成/取得 LRN VC
+  → 组合并签名 VP
+  → 提交 development Compliance API
+  → 返回 Compliance Verifiable Credential
+```
+
+下载并验收了 5 个 JWT 文件：
+
+| 文件 | 作用 | 验收结果 |
+|------|------|----------|
+| `LegalPerson.jwt` | Gaia-X 样例法人的 Legal Person VC | 三段式 JWT，签发者为 `did:web:vc-jwt.io` |
+| `Issuer.jwt` | Gaia-X Terms & Conditions VC | 三段式 JWT，签发者为 `did:web:vc-jwt.io` |
+| `LegalRegistrationNumber.jwt` | VAT LRN VC | 三段式 JWT，由 `did:web:registrationnumber.notary.lab.gaia-x.eu:v2` 签发 |
+| `Signed Verifiable Presentation.jwt` | 包含上述 3 个 VC 的 VP-JWT | 内含 3 个 Enveloped VC，且与单独下载的 3 个 VC token 逐字一致 |
+| `Compliance Verifiable Credential.jwt` | Compliance Service 返回的结果 | 三段式 JWT，由 development Compliance Service 签发 |
+
+交叉引用检查结果：
+
+```text
+LegalPerson.gx:registrationNumber.id
+  = https://example.org/subjects/cb601964-aad9-4e4a-8bc4-9553d68b8b2a#cs
+
+LegalRegistrationNumber.credentialSubject.id
+  = https://example.org/subjects/cb601964-aad9-4e4a-8bc4-9553d68b8b2a#cs
+
+ReferenceMatches = true
+```
+
+最终 Compliance Credential 的关键结果：
+
+| 字段 | 实测值 |
+|------|--------|
+| Issuer | `did:web:compliance.lab.gaia-x.eu:development` |
+| Credential type | `VerifiableCredential, gx:LabelCredential` |
+| Label level | `SC` |
+| Compliance Engine | `2.12.0` |
+| Rules version | `CD25.10` |
+| Compliant credentials | 3 |
+| Validated criterion | `PA1.1` |
+| Valid until | `2026-11-07T09:13:18.423Z` |
+
+这说明本轮成功跑通的是 Gaia-X 官方样例 Participant 的技术流程，而不是原项目虚构公司的合规认证。
+
+> **身份边界（必须保留）**：最终获得 Compliance Credential 的 credential subject 对应 `Gaia-X European Association for Data and Cloud AISBL`，并非 `Energy Data Provider Ltd.`。因此，该成功结果只能证明 Wizard、Notary、VP-JWT 和 Compliance API 的端到端流程可运行，不能作为 `Energy Data Provider Ltd.` 已完成 Gaia-X onboarding 或已获得合规身份的证据。
+
+两条路径的最终对照：
+
+| 路径 | Participant 身份 | LRN | 结果 | 可以证明什么 |
+|------|------------------|-----|------|--------------|
+| 原项目路径 | `Energy Data Provider Ltd.`（虚构） | `DEMO-ENERGY-001`（虚构） | ❌ LRN 校验失败 | 虚构 Participant 无法直接通过官方 Wizard onboarding |
+| 成功 Demo 路径 | Gaia-X 官方样例法人 | `BE0762747721` | ✅ 返回 Compliance Credential | API 技术链路和三凭证 Participant 流程可跑通 |
+
+成功 Demo 的下载凭证保存在工作区：
+
+```text
+DSSC group b file/任务结果/wizard-output/
+```
+
+命令行复现实验脚本：
+
+```text
+DSSC group b file/任务结果/run-compliance-demo.ps1
+```
+
+该脚本默认只进行 VP 和嵌入 VC 的离线检查；显式添加 `-Submit` 后才会向 development Compliance API 发送 VP-JWT。
+
 ---
 
 ## 七、Registry Shapes 与 Trust Anchors 校验链分析
