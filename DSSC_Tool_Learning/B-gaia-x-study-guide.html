@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B组：Gaia-X Compliance Service + Registry 学习指南</title>
+  <link rel="stylesheet" href="../DSSC learning/assets/style.css">
+  <style>
+    .b-badge {
+      display: inline-block;
+      background: #7c3aed;
+      color: white;
+      padding: 0.2rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .task-check {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin: 1rem 0;
+    }
+    .task-check::before {
+      content: "📋 任务项";
+      display: block;
+      font-weight: 700;
+      color: #5b21b6;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .template-box {
+      background: #fffbeb;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin: 1rem 0;
+    }
+    .template-box::before {
+      content: "📄 模板文件";
+      display: block;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .field-table th:first-child { width: 28%; }
+    .field-table th:nth-child(2) { width: 20%; }
+    .field-table th:nth-child(3) { width: 52%; }
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-right: 0.5rem;
+    }
+    .deliverable {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin: 1rem 0;
+    }
+    .deliverable::before {
+      content: "✅ 交付物";
+      display: block;
+      font-weight: 700;
+      color: #065f46;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .link-ref {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      margin: 0.8rem 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+    .link-ref::before {
+      content: "🔗 ";
+    }
+  </style>
+</head>
+<body>
+
+<div class="lesson-header" style="background: linear-gradient(135deg, #5b21b6, #7c3aed);">
+  <div class="b-badge">B 组专用</div>
+  <h1>Gaia-X Compliance Service + Registry 学习指南</h1>
+  <div class="subtitle">Trust / Compliance 方向完整研究指引</div>
+  <div class="prerequisites">前置要求：理解 Verifiable Credential、JSON-LD、SHACL 基础概念</div>
+</div>
+
+<div class="lesson-content">
+
+<h2>📌 B 组任务概览</h2>
+
+<table>
+  <tr><th>负责方向</th><th>核心工具</th><th>最终交付</th></tr>
+  <tr><td>Trust / compliance</td><td>Gaia-X Compliance Service + Registry</td><td>Gaia-X compliance flow、最小 credential demo、error analysis</td></tr>
+</table>
+
+<div class="task-check">
+  <ul>
+    <li>用模板理解 participant credential 和 service offering credential 的结构</li>
+    <li>对照 Gaia-X 官方 sample credentials 补齐 required fields</li>
+    <li>调用官方 Compliance Service 或 lab instance</li>
+    <li>记录一个失败样例和失败原因</li>
+    <li>说明 Registry 提供的 shapes、schemas、trust anchors 如何影响验证</li>
+  </ul>
+</div>
+
+<div class="callout callout-warning">
+  <div class="callout-title">重要提示</div>
+  <p>模板是教学模板，不保证直接通过官方 Gaia-X compliance。真正提交时应基于官方 sample credentials 调整。</p>
+</div>
+
+<h2>一、Gaia-X Trust Framework 核心概念</h2>
+
+<div class="analogy">
+  <p>想象你要在一个<strong>可信市场</strong>里卖能源数据。市场管理方制定了一套规则：</p>
+  <ul>
+    <li>每个卖家必须出示营业执照（LegalParticipant）</li>
+    <li>每个商品必须有清晰的描述（ServiceOffering）</li>
+    <li>所有证件必须由认可的机构签发（Trust Anchor）</li>
+    <li>检查员会验证证件真伪和内容完整性（Compliance Service）</li>
+  </ul>
+  <p><strong>Gaia-X Trust Framework</strong> 就是这个"可信市场"的规则手册，定义了在 Gaia-X 数据空间中什么是"可信的"。</p>
+</div>
+
+<h3>Self-Description：Gaia-X 的核心</h3>
+
+<p>Self-Description（自描述）是 Gaia-X 的核心概念。它本质上是<strong>用 Verifiable Credential 格式编写的实体描述</strong>，具备以下特征：</p>
+
+<ul>
+  <li>机器可读文本（JSON-LD 格式）</li>
+  <li>加密签名，防止内容篡改</li>
+  <li>遵循 Linked Data 原则</li>
+  <li>格式遵循 W3C Verifiable Credentials Data Model</li>
+</ul>
+
+<div class="callout callout-tip">
+  <div class="callout-title">关键公式</div>
+  <p>Self-Description = Verifiable Credential + Gaia-X 特定类型（LegalParticipant / ServiceOffering / DataResource）</p>
+</div>
+
+<h3>四种规则类型</h3>
+
+<table>
+  <tr><th>规则类型</th><th>说明</th><th>谁执行</th></tr>
+  <tr><td>序列化格式与语法</td><td>验证 JSON-LD 格式是否正确、context 是否可解析</td><td>Compliance Service</td></tr>
+  <tr><td>加密签名验证</td><td>验证 proof 是否有效、密钥对是否与身份匹配</td><td>Compliance Service</td></tr>
+  <tr><td>属性值一致性</td><td>验证各属性值是否符合定义的数据类型和约束</td><td>Compliance Service + SHACL</td></tr>
+  <tr><td>属性真实性验证</td><td>验证关键声明是否真实（如注册号是否有效）</td><td>Trust Anchor + 外部验证</td></tr>
+</table>
+
+<h3>三个信任维度</h3>
+
+<table>
+  <tr><th>维度</th><th>含义</th><th>实现方式</th></tr>
+  <tr><td>身份信任</td><td>参与者确实是它声称的那个实体</td><td>DID + Verifiable Credential + Trust Anchor</td></tr>
+  <tr><td>合规信任</td><td>参与者的 Self-Description 符合 Trust Framework 规则</td><td>SHACL shapes + Compliance Service</td></tr>
+  <tr><td>数据主权信任</td><td>数据提供方保持对数据的控制</td><td>Policy + Contract + Connector</td></tr>
+</table>
+
+<h2>二、模板文件逐字段解析</h2>
+
+<h3>2.1 LegalParticipant 模板</h3>
+
+<div class="template-box">
+  <p style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; margin:0;">DSSC_Minimal_Energy_Scenario/gaia-x/legal-participant.template.jsonld</p>
+</div>
+
+<p>这个模板描述了场景中的 Provider —— <code>Energy Data Provider Ltd.</code> 作为合法参与者的自描述：</p>
+
+<pre><code>{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    { "gx": "https://w3id.org/gaia-x/development#" }
+  ],
+  "id": "https://example.org/dssc-energy/credentials/legal-participant-energy-provider",
+  "type": ["VerifiableCredential", "LegalParticipant"],
+  "issuer": "did:web:example.org",
+  "issuanceDate": "2026-05-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "did:web:energy-provider.example.org",
+    "gx:legalName": "Energy Data Provider Ltd.",
+    "gx:legalRegistrationNumber": "DEMO-ENERGY-001",
+    "gx:headquarterAddress": { "gx:countrySubdivisionCode": "CN-GD" },
+    "gx:legalAddress": { "gx:countrySubdivisionCode": "CN-GD" }
+  }
+}</code></pre>
+
+<h4>字段详解</h4>
+
+<table class="field-table">
+  <tr><th>字段</th><th>值（模板中）</th><th>含义与注意点</th></tr>
+  <tr><td><code>@context</code></td><td>VC v1 + gx 命名空间</td><td>必须包含 W3C VC context，Gaia-X 字段通过 <code>gx:</code> 前缀声明</td></tr>
+  <tr><td><code>id</code></td><td><code>https://example.org/...</code></td><td>该 VC 的全局唯一标识符。模板使用 example.org，实际应使用真实可解析 URL</td></tr>
+  <tr><td><code>type</code></td><td><code>["VerifiableCredential", "LegalParticipant"]</code></td><td>基类必须是 VerifiableCredential，Gaia-X 类型 LegalParticipant 表明这是"合法参与者"描述</td></tr>
+  <tr><td><code>issuer</code></td><td><code>did:web:example.org</code></td><td>签发者 DID。模板使用占位符，实际必须是受信任的 Trust Anchor</td></tr>
+  <tr><td><code>issuanceDate</code></td><td><code>2026-05-01T00:00:00Z</code></td><td>ISO 8601 格式签发时间</td></tr>
+  <tr><td><code>credentialSubject.id</code></td><td><code>did:web:energy-provider.example.org</code></td><td>被描述的参与者自身的 DID，应与 <code>issuer</code> 不同（除非自签）</td></tr>
+  <tr><td><code>gx:legalName</code></td><td><code>Energy Data Provider Ltd.</code></td><td>法定名称，必填</td></tr>
+  <tr><td><code>gx:legalRegistrationNumber</code></td><td><code>DEMO-ENERGY-001</code></td><td>注册号。模板使用占位符，实际需符合目标国家格式</td></tr>
+  <tr><td><code>gx:headquarterAddress</code></td><td><code>{"gx:countrySubdivisionCode": "CN-GD"}</code></td><td>总部地址，至少包含 ISO 3166-2 行政区代码（如 CN-GD = 广东）</td></tr>
+  <tr><td><code>gx:legalAddress</code></td><td><code>{"gx:countrySubdivisionCode": "CN-GD"}</code></td><td>法定注册地址，格式同 headquarterAddress</td></tr>
+</table>
+
+<div class="callout callout-danger">
+  <div class="callout-title">模板局限（为什么不一定能通过官方 compliance）</div>
+  <ul>
+    <li>没有真实可解析的 DID document（<code>did:web:example.org</code> 不存在）</li>
+    <li>没有 cryptographic proof（缺少 <code>proof</code> 字段的数字签名）</li>
+    <li>没有保证满足当前 Gaia-X Trust Framework 的全部 required fields</li>
+    <li><code>issuer</code> 不是真实的 Trust Anchor</li>
+  </ul>
+</div>
+
+<h3>2.2 ServiceOffering 模板</h3>
+
+<div class="template-box">
+  <p style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; margin:0;">DSSC_Minimal_Energy_Scenario/gaia-x/service-offering.template.jsonld</p>
+</div>
+
+<pre><code>{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    { "gx": "https://w3id.org/gaia-x/development#" }
+  ],
+  "id": "https://example.org/dssc-energy/credentials/service-offering-building-energy",
+  "type": ["VerifiableCredential", "ServiceOffering"],
+  "issuer": "did:web:energy-provider.example.org",
+  "issuanceDate": "2026-05-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "https://example.org/dssc-energy/service-offerings/building-energy-hourly-v1",
+    "gx:providedBy": "did:web:energy-provider.example.org",
+    "gx:name": "Building Energy Consumption Dataset API",
+    "gx:description": "Hourly electricity consumption data for demo buildings.",
+    "gx:aggregationOf": [
+      "https://example.org/dssc-energy/datasets/building-energy-hourly-v1"
+    ],
+    "gx:termsAndConditions": {
+      "gx:URL": "https://creativecommons.org/licenses/by/4.0/",
+      "gx:hash": "demo-only-no-hash"
+    },
+    "gx:policy": ["research-use-only"],
+    "gx:dataAccountExport": {
+      "gx:requestType": "API",
+      "gx:accessType": "digital",
+      "gx:formatType": "application/json"
+    }
+  }
+}</code></pre>
+
+<h4>字段详解</h4>
+
+<table class="field-table">
+  <tr><th>字段</th><th>值（模板中）</th><th>含义与注意点</th></tr>
+  <tr><td><code>type</code></td><td><code>["VerifiableCredential", "ServiceOffering"]</code></td><td>Gaia-X 类型 ServiceOffering 表明这是"服务产品"描述</td></tr>
+  <tr><td><code>issuer</code></td><td><code>did:web:energy-provider.example.org</code></td><td>签发者。这里与 LegalParticipant 的 <code>credentialSubject.id</code> 相同，表示由提供者自己签发</td></tr>
+  <tr><td><code>credentialSubject.id</code></td><td>service offering URL</td><td>该服务产品的唯一标识符</td></tr>
+  <tr><td><code>gx:providedBy</code></td><td>provider 的 DID</td><td>指向提供该服务的 LegalParticipant，必须对应一个已验证的 participant</td></tr>
+  <tr><td><code>gx:name</code></td><td><code>Building Energy Consumption Dataset API</code></td><td>服务名称，与场景中的 Data Product 名称一致</td></tr>
+  <tr><td><code>gx:description</code></td><td>描述文本</td><td>服务描述</td></tr>
+  <tr><td><code>gx:aggregationOf</code></td><td>数据集 URL 数组</td><td>该服务聚合了哪些数据资源。场景中对应 <code>building-energy-hourly-v1</code></td></tr>
+  <tr><td><code>gx:termsAndConditions</code></td><td><code>URL + hash</code></td><td>条款链接和内容哈希，用于完整性校验。模板中 hash 是占位符</td></tr>
+  <tr><td><code>gx:policy</code></td><td><code>["research-use-only"]</code></td><td>使用策略列表，表明数据用途限制</td></tr>
+  <tr><td><code>gx:dataAccountExport</code></td><td>请求类型/访问类型/格式类型</td><td>描述数据导出方式：API、数字访问、JSON 格式</td></tr>
+</table>
+
+<h3>2.3 两个模板的关系</h3>
+
+<div class="flow" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">LegalParticipant VC<br/>（谁提供数据）</div>
+    <div class="flow-arrow">→ 被引用 →</div>
+    <div class="flow-step">ServiceOffering VC<br/>（提供什么服务）</div>
+  </div>
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step"><code>gx:providedBy</code></div>
+    <div class="flow-arrow">→ 指向 participant DID →</div>
+    <div class="flow-step">建立"服务-提供者"关联</div>
+  </div>
+</div>
+
+<h2>三、Compliance Service：验证引擎</h2>
+
+<h3>3.1 核心功能</h3>
+
+<table>
+  <tr><th>项目</th><th>说明</th></tr>
+  <tr><td>输入</td><td>参与者提供的 W3C Verifiable Presentations</td></tr>
+  <tr><td>检查手段</td><td>使用 Gaia-X Registry 中可用的 W3C SHACL 格式 shapes</td></tr>
+  <tr><td>输出</td><td>返回 W3C Verifiable Credential，即带 Gaia-X 签名的 <strong>"Gaia-X Compliance Credential"</strong>，证明输入已通过所有验证</td></tr>
+  <tr><td>目的</td><td>将 Trust Framework 操作化，通过计算和验证策略确保<strong>数据主权</strong></td></tr>
+  <tr><td>附加功能</td><td>自动化数据空间治理与合规评估：入驻 onboarding、监管约束合规性评估、退出 offboarding</td></tr>
+</table>
+
+<div class="link-ref">https://toolbox.dssc.eu/?pane=tools&f%5Bquery%5D=Gaia-x+&tool=gaia-x-compliance-service&tool-details=gaia-x-compliance-service</div>
+
+<h3>3.2 验证流程（6 步）</h3>
+
+<div class="flow" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">Step 1</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">接收 Self-Description（VC/VP 格式）</div>
+  </div>
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">Step 2</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">验证 proof（签名是否有效、内容是否被篡改）</div>
+  </div>
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">Step 3</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">验证 issuer（是否在 Trust Anchor 列表中）</div>
+  </div>
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">Step 4</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">验证 revocation（凭证是否被撤销）</div>
+  </div>
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">Step 5</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">验证 SHACL（内容是否符合 Trust Framework shapes）</div>
+  </div>
+  <div class="flow" style="width: 100%;">
+    <div class="flow-step">Step 6</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">输出验证报告（通过/失败 + 详细原因）</div>
+  </div>
+</div>
+
+<h3>3.3 验证报告格式</h3>
+
+<p><strong>失败示例：</strong></p>
+
+<pre><code>{
+  "conforms": false,
+  "results": [
+    {
+      "focusNode": "urn:uuid:.../legal-participant",
+      "path": "gx:headquarterAddress",
+      "message": "headquarterAddress is required.",
+      "severity": "sh:Violation"
+    },
+    {
+      "focusNode": "urn:uuid:.../legal-participant",
+      "path": "gx:legalRegistrationNumber",
+      "message": "legalRegistrationNumber must match pattern ^[A-Z]{2}-\\d{6,}$",
+      "severity": "sh:Violation"
+    }
+  ]
+}</code></pre>
+
+<p><strong>通过示例：</strong></p>
+
+<pre><code>{
+  "conforms": true,
+  "results": [],
+  "credential": {
+    "type": ["VerifiableCredential", "GaiaXComplianceCredential"],
+    "issuer": "did:web:compliance.gaia-x.eu",
+    ...
+  }
+}</code></pre>
+
+<h4>验证报告字段说明</h4>
+
+<table>
+  <tr><th>字段</th><th>含义</th></tr>
+  <tr><td><code>conforms</code></td><td>true = 通过，false = 失败</td></tr>
+  <tr><td><code>results</code></td><td>错误详情数组，通过时为空</td></tr>
+  <tr><td><code>focusNode</code></td><td>出问题的节点（哪个实体）</td></tr>
+  <tr><td><code>path</code></td><td>出问题的属性路径（哪个字段）</td></tr>
+  <tr><td><code>message</code></td><td>人类可读的错误描述</td></tr>
+  <tr><td><code>severity</code></td><td>严重程度：sh:Violation（必须修复）或 sh:Warning（建议修复）</td></tr>
+</table>
+
+<h2>四、Registry：参考数据存储</h2>
+
+<h3>4.1 定位与功能</h3>
+
+<p>Registry 是一个以<strong>去中心化</strong>为核心的开源软件，是 Gaia-X 治理的支柱。它存储以下关键信息：</p>
+
+<ul>
+  <li>Gaia-X <strong>Trust Anchors</strong> 列表</li>
+  <li>Trust Anchors <strong>验证过程</strong>的结果</li>
+  <li>Trust Anchors 身份的<strong>潜在撤销</strong>信息</li>
+  <li>Gaia-X Verifiable Credentials 的 <strong>shapes 和 schemas</strong></li>
+</ul>
+
+<div class="link-ref">https://toolbox.dssc.eu/?pane=tools&f%5Bquery%5D=Gaia-x+&tool=gaia-x-registry&tool-details=gaia-x-registry</div>
+
+<h3>4.2 Registry 存储的内容及其对验证的影响</h3>
+
+<table>
+  <tr><th>内容</th><th>格式</th><th>对 Compliance 验证的影响</th></tr>
+  <tr><td>SHACL Shapes</td><td>Turtle (.ttl)</td><td><strong>定义每种 Self-Description 必须有哪些字段和约束</strong>。Compliance Service 用这些 shapes 检查传入的 VC 是否满足结构要求。Shapes 更新时，验证规则同步更新。</td></tr>
+  <tr><td>Trust Anchors</td><td>VC / JSON-LD</td><td><strong>决定哪些 issuer 被信任</strong>。如果 issuer 不在 Trust Anchor 列表中，验证直接失败。这是信任链的起点。</td></tr>
+  <tr><td>公钥</td><td>JWK / PEM</td><td><strong>用于验证 Self-Description 的数字签名</strong>。Compliance Service 从 Registry 获取 issuer 的公钥来校验 proof。</td></tr>
+  <tr><td>撤销列表</td><td>JSON / Bitstring</td><td><strong>记录已被撤销的凭证 ID</strong>。验证时若发现凭证 ID 在撤销列表中，立即拒绝。</td></tr>
+  <tr><td>已验证的 SD</td><td>JSON-LD</td><td>通过验证的 Self-Description 存档，可供查询。</td></tr>
+</table>
+
+<h3>4.3 技术架构</h3>
+
+<ul>
+  <li>基于 <strong>DNSSEC</strong> 和 <strong>IPFS</strong></li>
+  <li>利用 <strong>DNS URI/TXT 记录</strong> 宣传当前 URI（ipfs:// 链接，内含 CID）</li>
+  <li>IPFS 中存储的数据包括：治理文件、shapes、schemas 及其他关键生态信息</li>
+</ul>
+
+<h3>4.4 Registry 版本</h3>
+
+<table>
+  <tr><th>版本</th><th>名称</th><th>状态</th></tr>
+  <tr><td>v1 / v1.x.x</td><td>GXDCH Tagus</td><td>早期版本，部署于 Clearing Houses</td></tr>
+  <tr><td>v2 / v2.x.x</td><td>GXDCH Loire</td><td><strong>当前稳定版</strong>，部署于 Clearing Houses</td></tr>
+</table>
+
+<h3>4.5 Registry 与 Compliance Service 的协作关系</h3>
+
+<div class="diagram" style="text-align: left; font-size: 0.9rem;">
+<pre style="border:none; background:none; padding:0; font-size:0.85rem; line-height:1.7;">
+┌─────────────────────────────────────────────────────────────┐
+│                      Gaia-X Ecosystem                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌──────────────┐         查询 shapes/schemas              │
+│   │   Registry    │ ◄────────────────────────────┐         │
+│   │  (参考数据)    │                              │         │
+│   │              │                              │         │
+│   │ • SHACL      │         查询 Trust Anchors   │         │
+│   │ • Schemas    │ ◄────────────────────────────┤         │
+│   │ • Public Keys│                              │         │
+│   │ • Revocation │         查询公钥 / 撤销列表   │         │
+│   └──────────────┘ ◄────────────────────────────┘         │
+│          ▲                                                   │
+│          │                                                   │
+│          │              ┌─────────────────────┐             │
+│          └──────────────│  Compliance Service  │             │
+│                         │    (验证引擎)         │             │
+│                         │                     │             │
+│    1. 接收 VC/VP  ─────►│  2. 查 Registry     │             │
+│                         │  3. 验签名           │             │
+│                         │  4. 验 SHACL        │             │
+│    ◄──── 验证报告 ──────│  5. 发 Compliance VC│             │
+│                         └─────────────────────┘             │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h2>五、实战步骤</h2>
+
+<h3>Step 1：理解模板结构</h3>
+
+<p><span class="step-num">1</span>仔细阅读两个模板文件，用上面的字段解析表对照每个字段的含义。</p>
+
+<div class="task-check">
+  <ul>
+    <li>打开 <code>legal-participant.template.jsonld</code>，标注每个字段的含义</li>
+    <li>打开 <code>service-offering.template.jsonld</code>，标注每个字段的含义</li>
+    <li>画出两个模板之间的引用关系（ServiceOffering.providedBy → LegalParticipant.id）</li>
+  </ul>
+</div>
+
+<h3>Step 2：查找官方 Sample Credentials</h3>
+
+<p><span class="step-num">2</span>对照 Gaia-X 官方 sample credentials，找出模板中可能缺失的 required fields。</p>
+
+<div class="link-ref">https://gaia-x.gitlab.io/policy-rules-committee/trust-framework/gaia-x_trust_framework/</div>
+
+<div class="task-check">
+  <ul>
+    <li>访问 Gaia-X Trust Framework 官方文档</li>
+    <li>查找官方提供的 LegalParticipant 和 ServiceOffering 的完整示例</li>
+    <li>对比模板，列出模板缺少但官方要求的字段（如可能缺少的 <code>gx:termsAndConditions.hash</code> 真实值、<code>proof</code> 字段等）</li>
+  </ul>
+</div>
+
+<h3>Step 3：构造测试 Credential</h3>
+
+<p><span class="step-num">3</span>准备两个测试用例：一个故意不完整的（预期失败），一个尽量完整的（观察结果）。</p>
+
+<div class="task-check">
+  <p><strong>失败样例思路（故意不完整）：</strong></p>
+  <ul>
+    <li>删除 <code>gx:legalRegistrationNumber</code> → 预期失败：缺少必填字段</li>
+    <li>将 <code>gx:headquarterAddress.countrySubdivisionCode</code> 改为无效值（如 <code>"XX-YY"</code>） → 预期失败：格式不符合</li>
+    <li>使用不在 Trust Anchor 列表中的 issuer → 预期失败：issuer 不受信任</li>
+    <li>删除 <code>proof</code> 字段（如果构造时添加过） → 预期失败：缺少签名</li>
+  </ul>
+  <p><strong>完整样例思路（尽量通过）：</strong></p>
+  <ul>
+    <li>基于官方 sample 填充所有 required fields</li>
+    <li>使用官方 lab instance 认可的 Trust Anchor（或了解 lab 的测试配置）</li>
+    <li>确保 JSON-LD context 可解析</li>
+  </ul>
+</div>
+
+<h3>Step 4：调用 Compliance Service</h3>
+
+<p><span class="step-num">4</span>使用 curl 或 Postman 调用官方 Compliance Service 或 lab instance。</p>
+
+<div class="task-check">
+  <ul>
+    <li>找到官方 Compliance Service 的 API 端点（如 lab instance 地址）</li>
+    <li>构造 HTTP POST 请求，Content-Type: <code>application/json</code></li>
+    <li>在请求 body 中放入 Verifiable Presentation（包含要验证的 VC）</li>
+    <li>发送请求并保存响应</li>
+  </ul>
+</div>
+
+<p>示例 curl 结构（需根据实际 endpoint 调整）：</p>
+
+<pre><code>curl -X POST https://compliance.lab.gaia-x.eu/api/v1/credential-offers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    "type": ["VerifiablePresentation"],
+    "verifiableCredential": [
+      { /* 你的 LegalParticipant VC */ },
+      { /* 你的 ServiceOffering VC */ }
+    ]
+  }'</code></pre>
+
+<h3>Step 5：分析验证结果</h3>
+
+<p><span class="step-num">5</span>记录并分析成功和失败的响应。</p>
+
+<div class="task-check">
+  <ul>
+    <li>保存完整的 HTTP 响应（状态码 + response body）</li>
+    <li>对失败响应，逐条分析 <code>results</code> 数组中的每项：<code>focusNode</code>、<code>path</code>、<code>message</code></li>
+    <li>将错误归类：是签名问题？issuer 问题？SHACL 约束问题？还是格式问题？</li>
+    <li>对照 Registry 中提供的 shapes，解释为什么某些字段是 required</li>
+  </ul>
+</div>
+
+<h3>Step 6：分析 Registry 的影响</h3>
+
+<p><span class="step-num">6</span>说明 Registry 如何影响验证结果。</p>
+
+<div class="task-check">
+  <ul>
+    <li>若验证失败原因为 "issuer not in trust anchor list"，说明 Registry 的 Trust Anchor 列表起决定性作用</li>
+    <li>若验证失败原因为 "missing required field: gx:xxx"，说明 Registry 的 SHACL shapes 定义了字段约束</li>
+    <li>若验证失败原因为 "signature verification failed"，说明 Registry 提供的公钥不匹配</li>
+    <li>若验证失败原因为 "credential has been revoked"，说明 Registry 的撤销列表生效</li>
+  </ul>
+</div>
+
+<h2>六、B 组交付物模板</h2>
+
+<h3>交付物 1：Gaia-X Compliance 流程图</h3>
+
+<div class="deliverable">
+  <p>建议用 Mermaid 或手绘图展示以下流程：</p>
+  <ol>
+    <li>Participant 创建 Self-Description（LegalParticipant + ServiceOffering）</li>
+    <li>Trust Anchor 签名（添加 proof）</li>
+    <li>Participant 组装 Verifiable Presentation</li>
+    <li>提交到 Compliance Service</li>
+    <li>Compliance Service 查询 Registry（shapes / trust anchors / keys / revocation）</li>
+    <li>验证签名 → 验证 issuer → 验证撤销 → 验证 SHACL</li>
+    <li>输出 Compliance Credential 或错误报告</li>
+  </ol>
+</div>
+
+<h3>交付物 2：Credential 请求样例</h3>
+
+<div class="deliverable">
+  <p>包含以下内容：</p>
+  <ul>
+    <li>LegalParticipant VC 完整 JSON（基于模板+官方 sample 完善后）</li>
+    <li>ServiceOffering VC 完整 JSON（基于模板+官方 sample 完善后）</li>
+    <li>Verifiable Presentation 包装格式</li>
+    <li>HTTP 请求（curl 或 Postman 截图）</li>
+  </ul>
+</div>
+
+<h3>交付物 3：Compliance Error Analysis</h3>
+
+<div class="deliverable">
+  <p>建议表格格式：</p>
+  <table>
+    <tr><th>测试编号</th><th>修改内容</th><th>预期结果</th><th>实际结果</th><th>原因分析</th></tr>
+    <tr><td>1</td><td>删除 gx:legalRegistrationNumber</td><td>失败</td><td>（待填写）</td><td>SHACL minCount 约束</td></tr>
+    <tr><td>2</td><td>修改 countrySubdivisionCode 为无效值</td><td>失败</td><td>（待填写）</td><td>SHACL pattern 约束</td></tr>
+    <tr><td>3</td><td>使用未注册的 issuer DID</td><td>失败</td><td>（待填写）</td><td>Trust Anchor 不在 Registry 中</td></tr>
+    <tr><td>4</td><td>完整正确的 credential</td><td>通过</td><td>（待填写）</td><td>全部检查项通过</td></tr>
+  </table>
+</div>
+
+<h2>七、关键参考资料</h2>
+
+<table>
+  <tr><th>资源</th><th>链接</th><th>用途</th></tr>
+  <tr><td>Gaia-X Trust Framework</td><td><code>https://gaia-x.gitlab.io/policy-rules-committee/trust-framework/gaia-x_trust_framework/</code></td><td>理解规则、概念、Self-Description 类型</td></tr>
+  <tr><td>Gaia-X Registry (DSSC Toolbox)</td><td><code>https://toolbox.dssc.eu/?pane=tools&f%5Bquery%5D=Gaia-x+&tool=gaia-x-registry&tool-details=gaia-x-registry</code></td><td>了解 Registry 功能、架构、版本</td></tr>
+  <tr><td>Gaia-X Compliance Service (DSSC Toolbox)</td><td><code>https://toolbox.dssc.eu/?pane=tools&f%5Bquery%5D=Gaia-x+&tool=gaia-x-compliance-service&tool-details=gaia-x-compliance-service</code></td><td>了解 Compliance Service API、验证流程</td></tr>
+  <tr><td>场景模板文件</td><td><code>DSSC_Minimal_Energy_Scenario/gaia-x/*.template.jsonld</code></td><td>B 组学习起点</td></tr>
+  <tr><td>场景 README</td><td><code>DSSC_Minimal_Energy_Scenario/README.md</code></td><td>理解场景上下文</td></tr>
+  <tr><td>场景 Validation Guide</td><td><code>DSSC_Minimal_Energy_Scenario/VALIDATION_GUIDE.md</code></td><td>了解模板边界和已知限制</td></tr>
+</table>
+
+<h2>八、常见问题</h2>
+
+<h3>Q1：模板可以直接提交到官方 Compliance Service 吗？</h3>
+<p>不可以。模板中的 <code>example.org</code>、缺少的 <code>proof</code>、占位符注册号等都会导致验证失败。模板仅用于理解结构。</p>
+
+<h3>Q2：如何找到官方 sample credentials？</h3>
+<p>从 Gaia-X Trust Framework 官方文档（第一个链接）的示例部分查找，或在 Gaia-X GitLab 仓库中搜索 sample credentials。</p>
+
+<h3>Q3：Compliance Service 和 Registry 必须一起部署吗？</h3>
+<p>Compliance Service 依赖 Registry 提供的 shapes 和 trust anchors，但研究阶段可以优先使用官方提供的在线 lab instance，不必本地完整部署。</p>
+
+<h3>Q4：B 组需要本地部署 Registry 吗？</h3>
+<p>第一阶段不要求。优先使用官方 instance 调用 API，理解流程后再评估是否需要本地部署。</p>
+
+<h3>Q5：如果 lab instance 返回 500 错误怎么办？</h3>
+<p>记录完整的请求和响应，分析是网络问题、格式问题还是服务端问题。即使无法成功调用，也要保留错误截图和分析。</p>
+
+<h2>九、检查清单</h2>
+
+<p>完成以下项目后，B 组最小 demo 即算完成：</p>
+
+<table>
+  <tr><th>检查项</th><th>状态</th></tr>
+  <tr><td>能解释 LegalParticipant 模板中每个字段的含义</td><td>□</td></tr>
+  <tr><td>能解释 ServiceOffering 模板中每个字段的含义</td><td>□</td></tr>
+  <tr><td>能说明两个模板之间的关系</td><td>□</td></tr>
+  <tr><td>已对照官方 sample credentials 找出模板缺失的字段</td><td>□</td></tr>
+  <tr><td>已构造至少一个故意不完整的 credential（预期失败）</td><td>□</td></tr>
+  <tr><td>已构造一个尽量完整的 credential（观察结果）</td><td>□</td></tr>
+  <tr><td>已调用 Compliance Service 并保存响应</td><td>□</td></tr>
+  <tr><td>已记录失败原因并归类（签名/issuer/SHACL/格式）</td><td>□</td></tr>
+  <tr><td>能说明 Registry 的 shapes 如何影响验证结果</td><td>□</td></tr>
+  <tr><td>能说明 Registry 的 trust anchors 如何影响验证结果</td><td>□</td></tr>
+  <tr><td>已输出 compliance 流程图</td><td>□</td></tr>
+  <tr><td>已输出 credential 请求样例</td><td>□</td></tr>
+  <tr><td>已输出 compliance error analysis</td><td>□</td></tr>
+</table>
+
+</div>
+
+<div class="lesson-footer">
+  <p>B 组学习指南 | 基于 DSSC Toolbox Scenario 和 Gaia-X Trust Framework 官方文档</p>
+  <p>如有疑问，参考 <a href="../DSSC learning/lessons/0007-gaia-x-trust-framework.html">第7课：Gaia-X Trust Framework</a> 和 <a href="../DSSC learning/lessons/0008-compliance-registry.html">第8课：Compliance Service 与 Registry</a></p>
+</div>
+
+</body>
+</html>

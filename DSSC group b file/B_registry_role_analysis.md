@@ -1,6 +1,5 @@
 # B 组 — Gaia-X Registry Role Analysis
-
-> 任务：Task 3 — 研究 Registry 在 Gaia-X Compliance 验证过程中提供什么  
+ 
 > 分析文件：  
 > - `B_compliance_api_demo.md`
 > - `failure_in_registry.md`
@@ -8,7 +7,7 @@
 
 ---
 
-## 1. Task 3 Scope and Key Clarification
+## 1. 任务范围和关键分析
 
 本文件分析 Gaia-X Registry 在 Compliance 验证过程中的作用，重点回答：
 
@@ -21,9 +20,9 @@
 
 ---
 
-## 2. Task 2 Results Used in This Analysis
+## 2. Demo Results Used in This Analysis
 
-Task 2 提供了一个最小 LegalPerson credential payload：`legal-person-minimal.jsonld`，并基于它设计了两个错误变体：
+Demo 提供了一个最小 LegalPerson credential payload：`legal-person-minimal.jsonld`，并基于它设计了两个错误变体：
 
 | Credential | Purpose |
 |---|---|
@@ -31,7 +30,7 @@ Task 2 提供了一个最小 LegalPerson credential payload：`legal-person-mini
 | missing-field variant | 删除 mandatory fields，用于理论测试 LegalPerson SHACL shape |
 | format-error variant | 修改 context、date、countryCode 等格式，用于理论测试 JSON-LD / Address shape |
 
-Task 2 使用 Compliance API 进行测试，得到以下实际结果：
+Demo 使用 Compliance API 进行测试，得到以下实际结果：
 
 | Test | Actual API Result | Meaning |
 |---|---|---|
@@ -39,7 +38,7 @@ Task 2 使用 Compliance API 进行测试，得到以下实际结果：
 | `application/vp+jwt` + raw JSON-LD | `400 not a valid JWT` | API 要求 VP-JWT，不接受裸 JSON-LD |
 | pseudo JWT | `400 iss header ... missing` | 伪 JWT 通过 decode，但缺少 issuer DID |
 
-Task 2 的核心发现是：
+Demo 的核心发现是：
 
 **Gaia-X Compliance API 不是一个直接接收 JSON-LD 的 SHACL validator。它要求输入为签名后的 VP-JWT。当前测试只实际到达 JWT decode / JWT header 层，尚未进入 SHACL、Trust Anchor、T&C 或 Notary validation。**
 
@@ -67,7 +66,7 @@ Gaia-X Registry 可以理解为 Compliance Service 的规则来源和信任来�
 
 ## 4. Gaia-X Compliance Validation Chain
 
-结合 Task 2 的测试结果，可以将 Gaia-X Compliance 验证链理解为：
+结合 Demo 的测试结果，可以将 Gaia-X Compliance 验证链理解为：
 
 ```text
 [1] JWT decode
@@ -91,9 +90,9 @@ Gaia-X Registry 可以理解为 Compliance Service 的规则来源和信任来�
 Compliance Credential issued or validation error returned
 ```
 
-Task 2 当前实际到达的层级如下：
+Demo 当前实际到达的层级如下：
 
-| Layer | Reached in Task 2? | Explanation |
+| Layer | Reached in Demo? | Explanation |
 |---|---|---|
 | [1] JWT decode | Yes, failed | Raw JSON-LD is not a three-part VP-JWT |
 | [2] JWT header check | Yes, failed for pseudo JWT | Missing `iss`, so issuer DID cannot be identified |
@@ -105,160 +104,160 @@ Task 2 当前实际到达的层级如下：
 | [8] T&C validation | No | Requires Issuer T&C Credential |
 | [9] Notary validation | No | Requires Legal Registration Number Credential |
 
-**Therefore, Task 2 actual failures occur before Registry SHACL shapes and Trust Anchor validation are reached. Registry-level errors are mainly inferred future errors.**
+**因此，demo的实际错误发生在Registry SHACL shapes and Trust Anchor validation之前。Registry层级的错误主要警示了未来可能遇到的错误。**
 
 ---
 
-## 5. Actual API Errors vs Inferred Registry Errors
+## 5. 实际 API 错误与推断的 Registry 错误
 
-To avoid overclaiming, this report separates:
+为避免过度推断，本报告将错误分为两类：
 
-- **Actual API errors**: errors actually returned by the Compliance API in Task 2;
-- **Inferred Registry errors**: errors that would likely occur if the credential passed JWT / DID / signature layers and reached Registry-based validation.
+- **实际 API 错误**：Demo 中 Compliance API 实际返回的错误；
+- **推断的 Registry 错误**：如果 credential 通过 JWT / DID / signature 层并进入基于 Registry 的验证，后续可能出现的错误。
 
-| Error / Issue | Actual or Inferred | Validation Layer | Registry Relation | Explanation |
+| 错误 / 问题 | 实际或推断 | 验证层级 | 与 Registry 的关系 | 说明 |
 |---|---|---|---|---|
-| `not a valid JWT` | Actual | JWT decode | No direct Registry involvement | The submitted body is raw JSON-LD, not VP-JWT |
-| `iss header referencing the issuer's DID is missing` | Actual | JWT header | Indirect | Missing issuer DID, so DID / key resolution cannot start |
-| DID cannot resolve | Inferred | DID resolution | Indirect | Example DID `did:web:energy-provider.example.org` is a placeholder |
-| no signature / invalid signature | Inferred | Signature validation | Related to public key / trust anchor | Current payload is not a signed VP-JWT |
-| no trusted certificate chain | Inferred | Trust Anchor validation | Trust anchors / valid keys | No X.509 / TSP chain is provided |
-| public key revoked | Inferred | Key status validation | Revoked keys | A revoked key should not be trusted even if signature is mathematically valid |
-| trust anchor revoked | Inferred | Trust Anchor validation | Revoked anchors | A revoked anchor invalidates the trust chain |
-| missing `gx:registrationNumber` | Inferred | SHACL validation | LegalPerson shape | Missing-field variant would trigger this if SHACL is reached |
-| missing `gx:headquartersAddress` | Inferred | SHACL validation | LegalPerson / Address shape | Missing-field variant would trigger this if SHACL is reached |
-| missing `gx:legalAddress` | Inferred | SHACL validation | LegalPerson / Address shape | Missing-field variant would trigger this if SHACL is reached |
-| invalid `countryCode = "China"` | Inferred | SHACL validation | Address shape | Format-error variant may violate Address shape |
-| invalid `@context` | Inferred | JSON-LD processing / schema | Ontology / context | Wrong context may prevent RDF graph construction |
-| missing T&C VC | Inferred | T&C validation | T&C shape / hash | Minimal LegalPerson payload does not include Issuer T&C Credential |
-| registration number not verifiable | Inferred | Notary validation | registrationNumberIssuer / trusted data sources | Example registration number is not verified by a real Notary / LRN credential |
+| `not a valid JWT` | 实际 | JWT decode | Registry 未直接参与 | 提交的 body 是裸 JSON-LD，而不是 VP-JWT |
+| `iss header referencing the issuer's DID is missing` | 实际 | JWT header | 间接相关 | 缺少 issuer DID，因此无法开始 DID / key resolution |
+| DID 无法解析 | 推断 | DID resolution | 间接相关 | 示例 DID `did:web:energy-provider.example.org` 只是占位符 |
+| 缺少签名 / 签名无效 | 推断 | Signature validation | 与 public key / trust anchor 相关 | 当前 payload 不是已签名的 VP-JWT |
+| 缺少可信 certificate chain | 推断 | Trust Anchor validation | Trust anchors / valid keys | 未提供 X.509 / TSP chain |
+| public key 已撤销 | 推断 | Key status validation | Revoked keys | 即使签名在数学上有效，已撤销的 key 也不应被信任 |
+| trust anchor 已撤销 | 推断 | Trust Anchor validation | Revoked anchors | 已撤销的 anchor 会使 trust chain 失效 |
+| 缺少 `gx:registrationNumber` | 推断 | SHACL validation | LegalPerson shape | 如果进入 SHACL 验证，missing-field variant 会触发此错误 |
+| 缺少 `gx:headquartersAddress` | 推断 | SHACL validation | LegalPerson / Address shape | 如果进入 SHACL 验证，missing-field variant 会触发此错误 |
+| 缺少 `gx:legalAddress` | 推断 | SHACL validation | LegalPerson / Address shape | 如果进入 SHACL 验证，missing-field variant 会触发此错误 |
+| `countryCode = "China"` 无效 | 推断 | SHACL validation | Address shape | format-error variant 可能违反 Address shape |
+| `@context` 无效 | 推断 | JSON-LD processing / schema | Ontology / context | 错误的 context 可能导致 RDF graph 无法构建 |
+| 缺少 T&C VC | 推断 | T&C validation | T&C shape / hash | 最小 LegalPerson payload 不包含 Issuer T&C Credential |
+| registration number 无法验证 | 推断 | Notary validation | registrationNumberIssuer / trusted data sources | 示例 registration number 未经过真实的 Notary / LRN credential 验证 |
 
-**Conclusion of this section：`not a valid JWT` and `missing iss` are actual API errors, but they are pre-Registry errors. LegalPerson shape、Address shape、Trust Anchor、T&C、Notary、valid / revoked key errors are currently inferred future errors.**
-
----
-
-## 5.1 Direct Answer to the Question：whether we can identify which Registry shapes or trust anchors caused the API failure.
-
-Based on the current Task 2 results, the answer is:
-
-**No Registry SHACL shape or Trust Anchor actually caused the observed API failures, because the current tests did not reach Registry-level validation.**
-
-The actual observed errors were:
-
-| Actual API Error | Did it reach Registry shapes / trust anchors? | Explanation |
-|---|---|---|
-| `not a valid JWT` | No | The payload failed at JWT decode because raw JSON-LD was submitted instead of VP-JWT |
-| `iss header referencing the issuer's DID is missing` | No | The pseudo JWT passed decoding but failed at JWT header validation before DID / signature / Trust Anchor validation |
-
-Therefore, for the current tests, there is no actual Registry shape or trust anchor that can be identified as the direct cause of failure.
-
-However, Registry analysis is still meaningful because once a valid signed VP-JWT is submitted, Compliance Service would rely on Registry-provided components in later layers:
-
-| Later Validation Layer | Registry Component That Would Be Used | Possible Failure |
-|---|---|---|
-| SHACL validation | LegalPerson shape / Address shape | missing mandatory fields, invalid countryCode |
-| Trust validation | Trust Anchors / valid keys / revoked keys | no trusted certificate chain, revoked key, revoked anchor |
-| T&C validation | T&C shape / hash | missing Issuer T&C Credential |
-| Registration validation | registrationNumberIssuer / Notary | registration number not verifiable |
-
-**In short, Task 2 produced pre-Registry failures, not actual Registry-level failures. Task 3 therefore reports this limitation and analyzes which Registry components would become relevant in later validation layers.**
+**本节结论：`not a valid JWT` 和 `missing iss` 是实际 API 错误，但它们属于 Registry 前置层错误。LegalPerson shape、Address shape、Trust Anchor、T&C、Notary、valid / revoked key 相关错误目前都只是对后续错误的推断。**
 
 ---
 
-## 6. Credential-Level Registry Analysis
+## 5.1 对问题的直接回答：能否确定是哪些 Registry shapes 或 trust anchors 导致 API 失败
 
-The three Task 2 credential cases can be mapped as follows:
+根据当前 Demo 的结果，答案是：
 
-| Credential Case | Actual Failure in Task 2 | If Registry Validation Were Reached |
+**已观察到的 API 失败并非由任何 Registry SHACL shape 或 Trust Anchor 实际导致，因为当前测试尚未进入 Registry 层验证。**
+
+实际观察到的错误如下：
+
+| 实际 API 错误 | 是否到达 Registry shapes / trust anchors？ | 说明 |
 |---|---|---|
-| Correct version: `legal-person-minimal.jsonld` | Fails at JWT decode because it is raw JSON-LD, not VP-JWT | Basic LegalPerson SHACL may pass, but Trust Anchor、T&C、Notary validation would still fail due to missing signature, certificate chain, T&C VC and LRN credential |
-| Missing-field variant | Also fails at JWT decode | LegalPerson shape would likely report `sh:minCount` violations for missing `gx:registrationNumber`、`gx:headquartersAddress`、`gx:legalAddress` |
-| Format-error variant | Also fails at JWT decode | Invalid `@context` may fail during JSON-LD processing; invalid `countryCode = "China"` may fail Address shape validation |
+| `not a valid JWT` | 否 | 提交的是裸 JSON-LD 而不是 VP-JWT，因此 payload 在 JWT decode 阶段失败 |
+| `iss header referencing the issuer's DID is missing` | 否 | pseudo JWT 虽然通过 decode，但在 DID / signature / Trust Anchor 验证之前的 JWT header validation 阶段失败 |
 
-**Key point：All three credentials currently fail at the same pre-Registry JWT layer. Their differences would only become visible after a valid signed VP-JWT is submitted and the validation process reaches JSON-LD / SHACL / Registry layers.**
+因此，对于当前测试，无法将任何实际的 Registry shape 或 trust anchor 确定为失败的直接原因。
+
+不过，Registry 分析仍然有意义，因为提交有效且已签名的 VP-JWT 后，Compliance Service 会在后续层级使用 Registry 提供的组件：
+
+| 后续验证层级 | 将使用的 Registry 组件 | 可能出现的错误 |
+|---|---|---|
+| SHACL validation | LegalPerson shape / Address shape | 缺少 mandatory fields、countryCode 无效 |
+| Trust validation | Trust Anchors / valid keys / revoked keys | 缺少可信 certificate chain、key 已撤销、anchor 已撤销 |
+| T&C validation | T&C shape / hash | 缺少 Issuer T&C Credential |
+| Registration validation | registrationNumberIssuer / Notary | registration number 无法验证 |
+
+**简而言之，Demo 出现的是 Registry 前置层失败，而不是实际的 Registry 层失败。因此，Task 3 会说明这一限制，并分析后续验证层级中哪些 Registry 组件会发挥作用。**
 
 ---
 
-## 7. Focused Explanation of Required Registry Components
+## 6. Credential 层面的 Registry 分析
 
-This section directly answers the Task 3 requirement.
+Demo 中的三个 credential case 可以对应如下：
+
+| Credential Case | Demo 中的实际失败 | 如果到达 Registry 验证层 |
+|---|---|---|
+| 正确版本：`legal-person-minimal.jsonld` | 由于是裸 JSON-LD 而不是 VP-JWT，因此在 JWT decode 阶段失败 | 基础 LegalPerson SHACL 可能通过，但由于缺少 signature、certificate chain、T&C VC 和 LRN credential，Trust Anchor、T&C、Notary validation 仍会失败 |
+| Missing-field variant | 同样在 JWT decode 阶段失败 | LegalPerson shape 可能会针对缺少 `gx:registrationNumber`、`gx:headquartersAddress`、`gx:legalAddress` 报告 `sh:minCount` violations |
+| Format-error variant | 同样在 JWT decode 阶段失败 | 无效的 `@context` 可能在 JSON-LD processing 阶段失败；无效的 `countryCode = "China"` 可能无法通过 Address shape validation |
+
+**关键点：三个 credentials 当前都在同一个 Registry 前置 JWT 层失败。只有提交有效且已签名的 VP-JWT，并且验证过程到达 JSON-LD / SHACL / Registry 层后，它们之间的差异才会体现出来。**
+
+---
+
+## 7. Registry 必要组件的重点说明
+
+本节直接回答该任务的要求。
 
 ### 7.1 Shapes
 
-Shapes define the structural rules that credentials must satisfy. For example, a LegalPerson shape may require:
+Shapes 定义 credentials 必须满足的结构规则。例如，LegalPerson shape 可能要求包含：
 
 - `gx:registrationNumber`
 - `gx:headquartersAddress`
 - `gx:legalAddress`
 
-If these fields are missing, SHACL validation may return `sh:minCount` violations.
+如果缺少这些字段，SHACL validation 可能返回 `sh:minCount` violations。
 
-In Task 2, the missing-field variant is designed to test this layer, but it never actually reached SHACL because JWT decode failed first.
+在Demo中，missing-field variant 用于测试这一层，但由于 JWT decode 先失败，因此测试实际上并未到达 SHACL。
 
 ---
 
 ### 7.2 Schemas
 
-Schemas / ontology define the meaning of Gaia-X terms.
+Schemas / ontology 定义 Gaia-X 术语的含义。
 
-For example:
+例如：
 
-| Term | Meaning |
+| 术语 | 含义 |
 |---|---|
-| `gx:LegalPerson` | A legal participant in Gaia-X |
-| `gx:Address` | Address object |
-| `gx:registrationNumber` | Legal registration number |
-| `gx:headquartersAddress` | Headquarters address |
-| `gx:legalAddress` | Legal address |
+| `gx:LegalPerson` | Gaia-X 中的合法参与者 |
+| `gx:Address` | 地址对象 |
+| `gx:registrationNumber` | 法定注册号 |
+| `gx:headquartersAddress` | 总部地址 |
+| `gx:legalAddress` | 法定地址 |
 
-If `@context` is wrong, the JSON-LD processor may not correctly expand Gaia-X terms, and the RDF data graph may not be built correctly. In Task 2, the format-error variant is designed to test this type of problem.
+如果 `@context` 错误，JSON-LD processor 可能无法正确展开 Gaia-X 术语，也可能无法正确构建 RDF data graph。在 Task 2 中，format-error variant 用于测试这类问题。
 
 ---
 
 ### 7.3 Trust Anchors
 
-Trust Anchors are trusted roots used to decide whether a signing key, certificate chain, issuer, or notary source can be trusted.
+Trust Anchors 是可信根，用于判断 signing key、certificate chain、issuer 或 notary source 是否可信。
 
-A credential may have a technically valid signature, but Gaia-X still needs to check whether the signing key or certificate chain can be linked to an accepted Trust Anchor.
+一个 credential 的签名可能在技术上有效，但 Gaia-X 仍需检查 signing key 或 certificate chain 能否链接到 accepted Trust Anchor。
 
-In Task 2, Trust Anchor validation was not reached because no signed VP-JWT, public key, or certificate chain was provided.
+在 Demo 中，由于未提供已签名的 VP-JWT、public key 或 certificate chain，因此未到达 Trust Anchor validation。
 
 ---
 
 ### 7.4 Valid / Revoked Keys
 
-Valid / revoked keys are used to decide whether a public key or certificate is still trusted at validation time.
+Valid / revoked keys 用于判断 public key 或 certificate 在验证时是否仍然可信。
 
-Even if a signature is mathematically correct, the credential should not be accepted if:
+即使签名在数学上正确，出现以下情况时也不应接受该 credential：
 
-- the public key is revoked;
-- the certificate is revoked;
-- the trust anchor is revoked;
-- the credential status is revoked.
+- public key 已撤销；
+- certificate 已撤销；
+- trust anchor 已撤销；
+- credential status 已撤销。
 
-**This means key validation is not only about whether the signature can be verified, but also about whether the key is still trusted now.**
+**这意味着 key validation 不仅要确认签名能否通过验证，还要确认该 key 当前是否仍然可信。**
 
 ---
 
-## 8. Conclusion and Next Steps
+## 8. 结论与后续工作
 
-Task 2 shows that the current sample credential cannot be directly validated by Gaia-X Compliance API because the API expects a signed VP-JWT, not raw JSON-LD. The actual observed failures are:
+Demo 表明，当前的 sample credential 无法由 Gaia-X Compliance API 直接验证，因为该 API 要求输入已签名的 VP-JWT，而不是裸 JSON-LD。实际观察到的失败包括：
 
-1. `not a valid JWT` at the JWT decode layer;
-2. `iss header referencing the issuer's DID is missing` at the JWT header layer.
+1. JWT decode 层的 `not a valid JWT`；
+2. JWT header 层的 `iss header referencing the issuer's DID is missing`。
 
-These actual errors occur before Registry SHACL shapes and Trust Anchor validation are reached.
+这些实际错误都发生在到达 Registry SHACL shapes 和 Trust Anchor validation 之前。
 
-Registry still plays a central role in the full Gaia-X Compliance process. It provides:
+Registry 在完整的 Gaia-X Compliance 流程中仍发挥核心作用。它提供：
 
-1. SHACL shapes for structural validation;
-2. schemas / ontology for semantic interpretation;
-3. trust anchors for certificate and issuer trust;
-4. valid / revoked key information for dynamic trust decisions;
-5. T&C rules / hash for Terms and Conditions acceptance;
-6. registrationNumberIssuer / Notary information for legal registration validation.
+1. 用于结构验证的 SHACL shapes；
+2. 用于语义解释的 schemas / ontology；
+3. 用于判断 certificate 和 issuer 是否可信的 trust anchors；
+4. 用于动态信任决策的 valid / revoked key 信息；
+5. 用于验证是否接受 Terms and Conditions 的 T&C rules / hash；
+6. 用于法定注册验证的 registrationNumberIssuer / Notary 信息。
 
-**Final statement：Task 2’s actual failures are Registry-precondition failures, while Registry shapes、schemas、trust anchors、valid / revoked keys、T&C and Notary would determine later-stage validation results once a valid signed VP-JWT is submitted.**
+**最终结论：最小demo 的实际失败属于 Registry 前置条件失败；提交有效且已签名的 VP-JWT 后，Registry shapes、schemas、trust anchors、valid / revoked keys、T&C 和 Notary 才会决定后续阶段的验证结果。**
 
-For future work, the group should generate a real signed VC-JWT / VP-JWT, include required `iss` and `kid` fields, deploy a resolvable DID:WEB document, and then re-test whether the API reaches Trust Anchor, SHACL, T&C or Notary validation.
+后续工作中，小组应生成真实且已签名的 VC-JWT / VP-JWT，加入必要的 `iss` 和 `kid` 字段，部署可解析的 DID:WEB document，然后重新测试 API 是否能够到达 Trust Anchor、SHACL、T&C 或 Notary validation。
 
