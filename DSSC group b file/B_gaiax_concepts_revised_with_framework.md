@@ -1,72 +1,72 @@
-# B Group Notes: Gaia-X Compliance Service and Registry
+# B 组笔记：Gaia-X 合规服务与注册中心
 
-## 1. Background
+## 1. 背景
 
-This note summarizes the main concepts needed for Group B's work on the Gaia-X Compliance Service and Gaia-X Registry. In the overall data space toolchain, Group B focuses on the trust and compliance layer. The main question is not how data is exchanged, but how a data space can verify that a participant, service, or data offering is described correctly, signed by the right party, and compliant with Gaia-X rules. The Gaia-X Trust Framework 22.04 is treated here as an official baseline reference for understanding the minimum trust and compliance requirements.
+本文总结了 B 组开展 Gaia-X 合规服务（Gaia-X Compliance Service）与 Gaia-X 注册中心（Gaia-X Registry）相关工作所需的主要概念。在整个数据空间工具链中，B 组专注于信任与合规层。核心问题不是数据如何交换，而是数据空间如何验证参与者、服务或数据产品是否得到正确描述，是否由适当的主体签名，以及是否符合 Gaia-X 规则。本文将 Gaia-X 信任框架 22.04 版作为理解最低信任与合规要求的官方基准参考。
 
-In a data space, different organizations need to interact without relying on informal trust. Gaia-X addresses this by using machine-verifiable descriptions and credentials. A participant describes itself and its services through structured metadata. These descriptions are represented as Verifiable Credentials and submitted as Verifiable Presentations. The Compliance Service then validates them using rules, schemas, trust anchors, public keys, and revocation information provided or referenced through the Gaia-X trust infrastructure, including the Registry.
+在数据空间中，不同组织需要在不依赖非正式信任的情况下进行交互。Gaia-X 通过使用机器可验证的描述和凭证来解决这一问题。参与者通过结构化元数据描述自身及其服务。这些描述以可验证凭证（Verifiable Credential）表示，并以可验证表达（Verifiable Presentation）的形式提交。随后，合规服务利用 Gaia-X 信任基础设施（包括注册中心）所提供或引用的规则、模式、信任锚、公钥和撤销信息对其进行验证。
 
-A simplified process is:
+简化流程如下：
 
 ```text
-Participant / Provider
+参与者／提供方
         ↓
-Self-Description of participant, service, or resource
+参与者、服务或资源的自描述
         ↓
-Verifiable Credential (VC)
+可验证凭证（VC）
         ↓
-Verifiable Presentation (VP)
+可验证表达（VP）
         ↓
-Gaia-X Compliance Service validation
+Gaia-X 合规服务验证
         ↓
-Gaia-X Compliance Credential or validation failure
+Gaia-X 合规凭证或验证失败
 ```
 
-According to the Gaia-X Trust Framework 22.04, the Trust Framework defines the compulsory minimum baseline rules for entities that want to be part of the Gaia-X ecosystem. These rules apply to Gaia-X Self-Description files for participants, service offerings, and resources. The document also states that the compliance process is automated and versioned, which explains why Group B should focus not only on the concepts but also on what a validation service checks and why a validation result succeeds or fails.
+根据 Gaia-X 信任框架 22.04 版，该框架定义了希望加入 Gaia-X 生态系统的实体必须遵守的最低基准规则。这些规则适用于参与者、服务产品和资源的 Gaia-X 自描述文件。该文档还指出，合规流程是自动化且带版本管理的，这说明 B 组不仅应关注相关概念，还应关注验证服务检查什么，以及验证结果为何成功或失败。
 
-The same document identifies four major types of trust-framework rules:
+同一文档确定了四类主要的信任框架规则：
 
-- serialization format and syntax;
-- cryptographic signature validation and validation of the keypair-associated identity;
-- attribute value consistency;
-- attribute veracity verification.
+- 序列化格式和语法；
+- 加密签名验证，以及与密钥对关联的身份验证；
+- 属性值一致性；
+- 属性真实性验证。
 
-This is a useful checklist for the Group B demo: a valid example should not only have the right fields, but also the correct format, valid signatures, trusted key material, consistent values, and verifiable claims.
-
----
-
-## 2. Self-Description
-
-A Self-Description is a machine-readable description of a Gaia-X participant, service, resource, or data offering. It explains what the entity is, who provides it, what properties it has, and which terms or policies apply to it.
-
-For example, in the project scenario of an energy data space, a provider may publish a data offering for building-level hourly electricity consumption data. Its Self-Description should state information such as:
-
-- the legal identity of the provider;
-- the service or data product being offered;
-- the type and granularity of the data;
-- access conditions and usage policies;
-- relevant compliance or terms-and-conditions statements.
-
-The key point is that a Self-Description is not just a natural-language introduction. It is structured metadata intended to be processed by software. The Gaia-X Trust Framework 22.04 describes Gaia-X Self-Description files as machine-readable text files, cryptographically signed to prevent tampering, using linked data to describe attributes, and following the W3C Verifiable Credentials Data Model. In Gaia-X, Self-Descriptions are therefore commonly represented through Verifiable Credentials so that the statements can be signed, verified, and checked against compliance rules.
-
-In short, the Self-Description is the content layer: it says what is being claimed about the participant, service, or resource.
+这可作为 B 组演示的实用检查清单：有效示例不仅要包含正确的字段，还必须具备正确的格式、有效的签名、可信的密钥材料、一致的值以及可核验的声明。
 
 ---
 
-## 3. Verifiable Credential (VC)
+## 2. 自描述（Self-Description）
 
-A Verifiable Credential is a digitally signed, machine-verifiable statement about a subject. It is similar in function to a certificate or proof document, but it is designed for automated verification.
+自描述是对 Gaia-X 参与者、服务、资源或数据产品的机器可读描述。它说明该实体是什么、由谁提供、具有什么属性，以及适用哪些条款或政策。
 
-A VC usually contains:
+例如，在能源数据空间的项目场景中，提供方可能会发布一个建筑级逐小时用电量数据产品。其自描述应包含以下信息：
 
-- an `issuer`: the entity that issues the credential;
-- a `credentialSubject`: the entity or object being described;
-- claims about that subject;
-- validity information, such as issue date or expiration date;
-- a `proof` or signature;
-- optionally, a `credentialStatus` field for revocation checking.
+- 提供方的法定身份；
+- 所提供的服务或数据产品；
+- 数据的类型和粒度；
+- 访问条件和使用政策；
+- 相关合规声明或条款与条件声明。
 
-A simplified example is:
+关键在于，自描述不仅是一段自然语言介绍。它是供软件处理的结构化元数据。Gaia-X 信任框架 22.04 版将 Gaia-X 自描述文件定义为机器可读的文本文件：文件通过加密签名防止篡改，使用关联数据描述属性，并遵循 W3C 可验证凭证数据模型。因此，在 Gaia-X 中，自描述通常通过可验证凭证表示，使其中的声明能够被签名、验证并依据合规规则进行检查。
+
+简而言之，自描述是内容层：它说明对参与者、服务或资源作出了哪些声明。
+
+---
+
+## 3. 可验证凭证（Verifiable Credential，VC）
+
+可验证凭证是关于某个主体的、经过数字签名且可由机器验证的声明。其功能类似证书或证明文件，但专为自动验证而设计。
+
+VC 通常包含：
+
+- `issuer`：颁发凭证的实体；
+- `credentialSubject`：被描述的实体或对象；
+- 关于该主体的声明；
+- 有效性信息，例如颁发日期或到期日期；
+- `proof`（证明）或签名；
+- 可选的 `credentialStatus` 字段，用于撤销检查。
+
+简化示例如下：
 
 ```json
 {
@@ -82,350 +82,349 @@ A simplified example is:
 }
 ```
 
-The role of the VC is to make claims verifiable. A verifier can check whether the credential was issued by the stated issuer, whether the credential content has been modified, and whether the credential is still valid.
+VC 的作用是使声明可验证。验证方可以检查凭证是否由所声明的颁发方颁发、凭证内容是否被修改，以及凭证是否仍然有效。
 
-In Gaia-X, VCs may be used to represent legal person information, terms-and-conditions acceptance, service offering descriptions, registration number information, or compliance results.
+在 Gaia-X 中，VC 可用于表示法人信息、对条款与条件的接受、服务产品描述、注册号信息或合规结果。
 
 ---
 
-## 4. Verifiable Presentation (VP)
+## 4. 可验证表达（Verifiable Presentation，VP）
 
-A Verifiable Presentation is a package of one or more Verifiable Credentials submitted to a verifier. If a VC is one signed statement, a VP is the set of signed statements presented together for a specific verification purpose.
+可验证表达是提交给验证方的一个或多个可验证凭证的组合包。如果说 VC 是一项经过签名的声明，那么 VP 就是为特定验证目的而一起出示的一组经过签名的声明。
 
-For a Gaia-X compliance check, a provider may need to submit several credentials at the same time, such as:
+在 Gaia-X 合规检查中，提供方可能需要同时提交多项凭证，例如：
 
-- a Legal Person Credential;
-- a Legal Registration Number Credential;
-- a Terms and Conditions Credential;
-- a Service Offering Credential;
-- a Data Product or Resource Description Credential.
+- 法人凭证（Legal Person Credential）；
+- 法定注册号凭证（Legal Registration Number Credential）；
+- 条款与条件凭证（Terms and Conditions Credential）；
+- 服务产品凭证（Service Offering Credential）；
+- 数据产品或资源描述凭证。
 
-These credentials can be combined into a VP and submitted to the Gaia-X Compliance Service. The Compliance Service then validates both the individual credentials and the consistency of the submitted package.
+这些凭证可以组合成一个 VP，并提交给 Gaia-X 合规服务。合规服务随后会验证每一项凭证，以及所提交凭证包的一致性。
 
-The distinction is:
+二者的区别如下：
 
-| Concept | Meaning | Function |
+| 概念 | 含义 | 功能 |
 |---|---|---|
-| Verifiable Credential | One signed claim or set of claims | Proves something about a subject |
-| Verifiable Presentation | A package of one or more VCs | Presents credentials to a verifier |
+| 可验证凭证 | 一项经过签名的声明或一组声明 | 证明某个主体的相关信息 |
+| 可验证表达 | 一个或多个 VC 的组合包 | 向验证方出示凭证 |
 
 ---
 
-## 5. SHACL Shape
+## 5. SHACL 形状（SHACL Shape）
 
-SHACL stands for Shapes Constraint Language. It is used to define validation rules for RDF or JSON-LD data. Since Gaia-X descriptions are intended to be machine-readable and semantically structured, SHACL shapes can be used to check whether a description follows the expected structure.
+SHACL 是“形状约束语言”（Shapes Constraint Language）的缩写，用于定义 RDF 或 JSON-LD 数据的验证规则。由于 Gaia-X 描述旨在实现机器可读和语义化结构，SHACL 形状可用于检查描述是否符合预期结构。
 
-A SHACL shape can specify rules such as:
+SHACL 形状可以规定以下规则：
 
-- a required property must be present;
-- a property must have a certain datatype;
-- a property must appear at least or at most a certain number of times;
-- a value must belong to a defined class or controlled vocabulary;
-- a service offering must be linked to a provider or policy.
+- 必须存在某个必填属性；
+- 属性必须具有特定数据类型；
+- 属性的出现次数不得少于或多于某个数值；
+- 值必须属于指定的类或受控词汇表；
+- 服务产品必须关联到提供方或政策。
 
-For example, a simplified rule for a service offering could be:
+例如，一条简化的服务产品规则可以是：
 
 ```text
-A ServiceOffering must have:
-- a provider;
-- a service title or name;
-- terms and conditions;
-- access or usage policy information.
+ServiceOffering 必须具有：
+- 提供方；
+- 服务标题或名称；
+- 条款与条件；
+- 访问或使用政策信息。
 ```
 
-If a submitted Self-Description lacks a required field, the SHACL validation fails. This is important because Gaia-X compliance is not only about whether a credential is signed. It also checks whether the submitted content follows the required semantic model and policy structure.
+如果提交的自描述缺少必填字段，SHACL 验证就会失败。这一点很重要，因为 Gaia-X 合规不仅关注凭证是否经过签名，还检查所提交的内容是否遵循规定的语义模型和政策结构。
 
-In the Group B context, SHACL shapes can be understood as the structural validation rules used by the compliance process.
+在 B 组的工作语境中，可以将 SHACL 形状理解为合规流程使用的结构验证规则。
 
 ---
 
-## 6. Trust Anchor
+## 6. 信任锚（Trust Anchor）
 
-A Trust Anchor is a trusted starting point in a trust chain. It represents an entity, registry, key source, or authority that the system already recognizes as trustworthy.
+信任锚是信任链中受信任的起点。它代表系统已经认可为可信的实体、注册机构、密钥来源或权威机构。
 
-Digital signatures alone are not enough. A signature can prove that a credential was signed by a certain key, but it does not automatically prove that the signer is trusted in the Gaia-X ecosystem. Trust anchors provide the basis for deciding whether an issuer or key source should be accepted.
+仅有数字签名并不足够。签名可以证明某项凭证由某个特定密钥签署，但不会自动证明签名方在 Gaia-X 生态系统中值得信任。信任锚为判断是否应接受某个颁发方或密钥来源提供依据。
 
-For example:
+例如：
 
 ```text
-Signature validation answers:
-Was this credential signed by the corresponding private key?
+签名验证回答：
+该凭证是否由相应的私钥签署？
 
-Trust validation answers:
-Is the signer or issuer recognized as trustworthy under the governance framework?
+信任验证回答：
+该签名方或颁发方是否根据治理框架被认可为可信？
 ```
 
-In Gaia-X, trust anchors and related trust information are part of the trust infrastructure. The Gaia-X Trust Framework 22.04 defines trust anchors as Gaia-X-endorsed entities responsible for managing certificates used to sign claims. It also states that all keypairs used to sign claims must have at least one Trust Anchor in their certificate chain, and that the current list of valid Trust Anchors is stored in the Gaia-X Registry. The Registry is therefore relevant because it provides or references trusted governance artefacts, trust anchor information, schemas, and validation materials used by compliance components.
+在 Gaia-X 中，信任锚及相关信任信息是信任基础设施的一部分。Gaia-X 信任框架 22.04 版将信任锚定义为经 Gaia-X 认可、负责管理用于签署声明的证书的实体。框架还规定，所有用于签署声明的密钥对，其证书链中都必须至少包含一个信任锚；当前有效信任锚的列表存储在 Gaia-X 注册中心中。因此，注册中心之所以重要，是因为它提供或引用合规组件所使用的可信治理构件、信任锚信息、模式和验证材料。
 
 ---
 
-## 7. Public Key
+## 7. 公钥（Public Key）
 
-A public key is used to verify a digital signature. It is paired with a private key:
+公钥用于验证数字签名。它与私钥成对使用：
 
-- the private key is kept secret and used to sign credentials;
-- the public key is shared and used by others to verify signatures.
+- 私钥保密，用于签署凭证；
+- 公钥公开，供其他主体验证签名。
 
-When an issuer signs a Verifiable Credential, it uses its private key. A verifier uses the corresponding public key to check whether the credential was really signed by that issuer and whether the content has been changed after signing.
+当颁发方签署可验证凭证时，会使用其私钥。验证方使用对应的公钥检查该凭证是否确实由该颁发方签署，以及内容在签署后是否发生变化。
 
-In a Gaia-X compliance process, public keys are needed to verify:
+在 Gaia-X 合规流程中，需要使用公钥验证：
 
-- the signature of each submitted VC;
-- the signature of the VP, if applicable;
-- the signature of the Gaia-X Compliance Credential returned by the Compliance Service.
+- 每项已提交 VC 的签名；
+- VP 的签名（如适用）；
+- 合规服务返回的 Gaia-X 合规凭证的签名。
 
-The public key only solves the cryptographic verification problem. It does not by itself prove that the issuer is trusted. That requires trust anchor and governance checks.
+公钥只能解决密码学验证问题，本身不能证明颁发方是可信的。这还需要进行信任锚和治理检查。
 
 ---
 
-## 8. Revocation
+## 8. 撤销（Revocation）
 
-Revocation means that a credential, key, or trust status is invalidated before its normal expiration time. This is necessary because a credential that was valid when issued may become invalid later.
+撤销是指凭证、密钥或信任状态在正常到期时间之前失效。这是必要的，因为凭证在颁发时可能有效，但之后可能失效。
 
-Possible reasons for revocation include:
+可能的撤销原因包括：
 
-- the credential was issued incorrectly;
-- the legal status of a participant changed;
-- a service is no longer compliant;
-- the issuer's private key was compromised;
-- the issuer or participant is no longer trusted;
-- the credential subject no longer satisfies the original claim.
+- 凭证颁发有误；
+- 参与者的法律地位发生变化；
+- 服务不再合规；
+- 颁发方的私钥遭到泄露；
+- 颁发方或参与者不再受信任；
+- 凭证主体不再满足原始声明。
 
-A VC may contain a `credentialStatus` field that allows a verifier to check whether the credential has been revoked. Therefore, validation should not only check the signature and expiration date. It should also check the current status of the credential.
+VC 可以包含 `credentialStatus` 字段，以便验证方检查该凭证是否已被撤销。因此，验证不仅应检查签名和到期日期，还应检查凭证的当前状态。
 
-The basic validation logic is:
+基本验证逻辑如下：
 
 ```text
-1. Is the credential format valid?
-2. Is the signature valid?
-3. Is the issuer trusted?
-4. Is the credential expired?
-5. Has the credential been revoked?
-6. Does the content satisfy the required shapes and policy rules?
+1. 凭证格式是否有效？
+2. 签名是否有效？
+3. 颁发方是否可信？
+4. 凭证是否已过期？
+5. 凭证是否已被撤销？
+6. 内容是否满足规定的形状和政策规则？
 ```
 
-Revocation is important because trust is time-dependent. A statement can be valid in the past but no longer acceptable in the present.
+撤销机制非常重要，因为信任具有时效性。一项声明过去可能有效，但现在可能已不再可接受。
 
 ---
 
-## 9. Gaia-X Registry
+## 9. Gaia-X 注册中心（Gaia-X Registry）
 
-The Gaia-X Registry is a trust-related component that provides or references governance and validation artefacts needed by Gaia-X services. It is not a repository for business data. Instead, it supports compliance and trust verification.
+Gaia-X 注册中心是一个与信任相关的组件，提供或引用 Gaia-X 服务所需的治理和验证构件。它不是业务数据存储库，而是用于支持合规与信任验证。
 
-The Registry may include or reference materials such as:
+注册中心可能包含或引用以下材料：
 
-- schemas;
-- SHACL shapes;
-- trust anchor information;
-- terms and conditions;
-- governance documents;
-- information relevant to credential and trust validation.
+- 模式；
+- SHACL 形状；
+- 信任锚信息；
+- 条款与条件；
+- 治理文档；
+- 与凭证和信任验证有关的信息。
 
-For Group B, the Registry can be understood as the place where the Compliance Service obtains part of the trusted reference material used during validation. It supports the question: what rules and trusted sources should the validator rely on?
-
----
-
-## 10. Gaia-X Compliance Service
-
-The Gaia-X Compliance Service validates submitted Verifiable Presentations against Gaia-X requirements. It checks whether the credentials are structurally correct, signed, trustworthy, and compliant with the relevant rules.
-
-Typical checks include:
-
-- whether the VP is in the expected format;
-- whether each VC has a valid signature;
-- whether the issuer can be trusted;
-- whether the relevant public keys are valid;
-- whether credentials are expired or revoked;
-- whether the Self-Description satisfies SHACL shapes;
-- whether the submitted claims satisfy Gaia-X policy rules.
-
-If validation succeeds, the Compliance Service issues a Gaia-X Compliance Credential. This new credential acts as machine-verifiable evidence that the submitted material passed the compliance check.
-
-If validation fails, the result should indicate the reason, such as a missing required field, invalid signature, untrusted issuer, revoked credential, or SHACL validation error.
+对 B 组而言，可以将注册中心理解为合规服务获取部分可信参考材料、用于验证的地方。它回答了这样一个问题：验证器应依据哪些规则和可信来源？
 
 ---
 
-## 11. How the Concepts Work Together
+## 10. Gaia-X 合规服务（Gaia-X Compliance Service）
 
-The concepts can be connected as follows:
+Gaia-X 合规服务依据 Gaia-X 要求验证提交的可验证表达。它检查凭证在结构上是否正确、是否经过签名、是否可信，以及是否符合相关规则。
+
+典型检查包括：
+
+- VP 是否采用预期格式；
+- 每项 VC 是否具有有效签名；
+- 颁发方是否可信；
+- 相关公钥是否有效；
+- 凭证是否已过期或被撤销；
+- 自描述是否满足 SHACL 形状；
+- 所提交的声明是否满足 Gaia-X 政策规则。
+
+如果验证成功，合规服务会颁发 Gaia-X 合规凭证。这项新凭证是可由机器验证的证据，表明所提交的材料已通过合规检查。
+
+如果验证失败，结果应指出原因，例如缺少必填字段、签名无效、颁发方不受信任、凭证已撤销或 SHACL 验证错误。
+
+---
+
+## 11. 各概念如何协同工作
+
+这些概念可按如下方式关联：
 
 ```text
-Trust Anchor
-   ↓ establishes trusted issuers / key sources
-Issuer
-   ↓ signs claims using a private key
-Verifiable Credential
-   ↓ contains signed claims about a participant, service, or resource
-Holder / Provider
-   ↓ packages multiple credentials
-Verifiable Presentation
-   ↓ submitted for compliance validation
-Gaia-X Compliance Service
-   ↓ checks signatures, trust, revocation, SHACL shapes, and policy rules
-Compliance Credential or Validation Failure
+信任锚
+   ↓ 确立可信的颁发方／密钥来源
+颁发方
+   ↓ 使用私钥签署声明
+可验证凭证
+   ↓ 包含有关参与者、服务或资源的签名声明
+持有方／提供方
+   ↓ 将多项凭证打包
+可验证表达
+   ↓ 提交进行合规验证
+Gaia-X 合规服务
+   ↓ 检查签名、信任、撤销状态、SHACL 形状和政策规则
+合规凭证或验证失败
 ```
 
-In this process:
+在此流程中：
 
-- Self-Description provides the structured claims.
-- VC provides a signed and verifiable format for those claims.
-- VP provides a package for submitting multiple credentials.
-- SHACL shapes provide structural validation rules.
-- Trust anchors define the trusted starting points.
-- Public keys enable signature verification.
-- Revocation prevents outdated or compromised credentials from being accepted.
-- The Registry provides trusted reference materials for the compliance process.
-- The Compliance Service performs the validation and returns the result.
-
----
-
-## 12. Minimal Scenario for the Project
-
-The project scenario is an energy data space. A provider wants to publish building-level hourly electricity consumption data as a data product or service.
-
-A minimal Group B example could use the following materials:
-
-1. **Provider Legal Person Credential**  
-   States that the provider is a legal entity.
-
-2. **Terms and Conditions Credential**  
-   States that the provider accepts Gaia-X terms and conditions.
-
-3. **Service Offering Self-Description / Credential**  
-   Describes the service that provides access to the electricity consumption data. At minimum, the Trust Framework example suggests that a service offering should include a `providedBy` link to the participant Self-Description and `termsAndConditions` information. It may also include `aggregationOf` links to related resources and `policies`, for example expressed in ODRL or Rego.
-
-4. **Data Product / Resource Description**  
-   Describes the offered data, such as hourly electricity consumption, building scope, format, access method, and usage policy. In the Gaia-X model, a dataset can be treated as a virtual resource. Relevant resource-level information can include copyright ownership, licence information, related physical or virtual resources, and endpoint information if the resource is exposed through a running API.
-
-5. **Verifiable Presentation**  
-   Packages the above credentials and descriptions for submission to the Compliance Service.
-
-The expected validation results can be recorded in two categories.
-
-Successful validation may indicate:
-
-- required fields are present;
-- credential signatures are valid;
-- issuers are trusted;
-- credentials are not expired or revoked;
-- submitted descriptions satisfy SHACL shapes;
-- Gaia-X policy rules are satisfied.
-
-Failed validation may be caused by:
-
-- missing required fields in the Self-Description;
-- incorrect JSON-LD or RDF structure;
-- invalid or missing signature;
-- issuer not connected to a trusted anchor;
-- revoked credential;
-- expired credential;
-- failure to satisfy Gaia-X policy rules.
+- 自描述提供结构化声明。
+- VC 为这些声明提供经过签名且可验证的格式。
+- VP 提供提交多项凭证的组合包。
+- SHACL 形状提供结构验证规则。
+- 信任锚定义可信的起点。
+- 公钥支持签名验证。
+- 撤销机制防止已过时或遭到破坏的凭证被接受。
+- 注册中心为合规流程提供可信参考材料。
+- 合规服务执行验证并返回结果。
 
 ---
 
-## 13. Notes from Gaia-X Trust Framework 22.04 for the Demo
+## 12. 项目的最小场景
 
-The Gaia-X Trust Framework 22.04 adds several concrete points that are useful for Group B's project deliverable.
+项目场景是一个能源数据空间。提供方希望将建筑级逐小时用电量数据作为数据产品或服务发布。
 
-### 13.1 Scope of Validation
+B 组的最小示例可以使用以下材料：
 
-The framework applies to Self-Descriptions of three main entity categories:
+1. **提供方法人凭证**  
+   声明提供方是一个法人实体。
 
-- **Participant**, including legal persons and natural persons;
-- **Service Offering**;
-- **Resource**.
+2. **条款与条件凭证**  
+   声明提供方接受 Gaia-X 条款与条件。
 
-For the energy data space scenario, this means the demo should not only describe the data product. It should also show the relation between:
+3. **服务产品自描述／凭证**  
+   描述提供用电量数据访问服务。信任框架示例表明，服务产品至少应包含指向参与者自描述的 `providedBy` 链接和 `termsAndConditions` 信息。它还可以包含指向相关资源的 `aggregationOf` 链接以及 `policies`，例如使用 ODRL 或 Rego 表达的政策。
+
+4. **数据产品／资源描述**  
+   描述所提供的数据，例如逐小时用电量、建筑范围、格式、访问方式和使用政策。在 Gaia-X 模型中，数据集可被视为虚拟资源。相关资源级信息可包括著作权所有权、许可证信息、相关物理或虚拟资源；如果资源通过运行中的 API 公开，还可包括端点信息。
+
+5. **可验证表达**  
+   将上述凭证和描述打包，提交给合规服务。
+
+预期验证结果可分为两类。
+
+验证成功可能表明：
+
+- 必填字段均已提供；
+- 凭证签名有效；
+- 颁发方可信；
+- 凭证未过期且未被撤销；
+- 所提交的描述满足 SHACL 形状；
+- 满足 Gaia-X 政策规则。
+
+验证失败可能由以下原因造成：
+
+- 自描述中缺少必填字段；
+- JSON-LD 或 RDF 结构不正确；
+- 签名无效或缺失；
+- 颁发方未连接到可信的信任锚；
+- 凭证已撤销；
+- 凭证已过期；
+- 未能满足 Gaia-X 政策规则。
+
+---
+
+## 13. 演示所需的 Gaia-X 信任框架 22.04 版要点
+
+Gaia-X 信任框架 22.04 版补充了若干具体要点，对 B 组的项目交付成果很有帮助。
+
+### 13.1 验证范围
+
+该框架适用于三类主要实体的自描述：
+
+- **参与者（Participant）**，包括法人和自然人；
+- **服务产品（Service Offering）**；
+- **资源（Resource）**。
+
+对于能源数据空间场景，这意味着演示不应只描述数据产品，还应展示以下关系：
 
 ```text
-Provider / Participant
+提供方／参与者
         ↓ providedBy
-Service Offering
+服务产品
         ↓ aggregationOf
-Resource / Dataset / API
+资源／数据集／API
 ```
 
-### 13.2 Participant-Level Fields
+### 13.2 参与者级字段
 
-For a legal person, the Trust Framework lists fields such as:
+对于法人，信任框架列出的字段包括：
 
-- `registrationNumber`;
-- `headquarterAddress.country`;
-- `legalAddress.country`;
-- optional `leiCode`;
-- optional parent or subsidiary organization links.
+- `registrationNumber`；
+- `headquarterAddress.country`；
+- `legalAddress.country`；
+- 可选的 `leiCode`；
+- 可选的母公司或子公司组织链接。
 
-The document also gives consistency rules. For example, if an LEI code is used, the LEI headquarters country should match `headquarterAddress.country`, and the LEI legal country should match `legalAddress.country`.
+该文档还规定了一致性规则。例如，如果使用 LEI 代码，LEI 总部所在国家应与 `headquarterAddress.country` 一致，LEI 法定所在国家应与 `legalAddress.country` 一致。
 
-### 13.3 Service Offering-Level Fields
+### 13.3 服务产品级字段
 
-For a service offering, useful fields include:
+服务产品的实用字段包括：
 
-- `providedBy`: a resolvable link to the participant Self-Description providing the service;
-- `aggregationOf`: links to related resources;
-- `termsAndConditions`: links to the applicable terms and conditions;
-- `policies`: optional policy expressions, for example in Rego or ODRL.
+- `providedBy`：指向服务提供方参与者自描述的可解析链接；
+- `aggregationOf`：指向相关资源的链接；
+- `termsAndConditions`：指向适用条款与条件的链接；
+- `policies`：可选的政策表达式，例如采用 Rego 或 ODRL。
 
-The Terms and Conditions structure includes:
+条款与条件结构包括：
 
-- `URL`: a resolvable link to the terms document;
-- `hash`: a SHA-256 hash of that document.
+- `URL`：指向条款文档的可解析链接；
+- `hash`：该文档的 SHA-256 哈希值。
 
-This gives Group B a concrete validation point: a service may fail if the terms link or hash is missing, invalid, or inconsistent.
+这为 B 组提供了一个具体的验证点：如果条款链接或哈希值缺失、无效或不一致，服务可能无法通过验证。
 
-### 13.4 Resource-Level Fields
+### 13.4 资源级字段
 
-For a virtual resource such as a dataset, the framework lists fields such as:
+对于数据集等虚拟资源，该框架列出的字段包括：
 
-- `copyrightOwnedBy`;
-- `license`.
+- `copyrightOwnedBy`；
+- `license`。
 
-For an instantiated virtual resource such as a running API, it lists fields such as:
+对于运行中的 API 等实例化虚拟资源，该框架列出的字段包括：
 
-- `maintainedBy`;
-- `hostedOn`;
-- `tenantOwnedBy`;
-- `endpoint`.
+- `maintainedBy`；
+- `hostedOn`；
+- `tenantOwnedBy`；
+- `endpoint`。
 
-This is useful for the project scenario because the building-hourly-electricity data can be described as a dataset, while the API exposing it can be described as an instantiated virtual resource.
+这对项目场景很有用，因为建筑逐小时用电数据可以描述为数据集，而将其公开的 API 可以描述为实例化虚拟资源。
 
-### 13.5 Suggested Minimal Failure Cases
+### 13.5 建议的最小失败案例
 
-Based on the Trust Framework, the demo can include several simple failure cases:
+根据信任框架，演示可以包含几个简单的失败案例：
 
-| Failure Case | Expected Reason |
+| 失败案例 | 预期原因 |
 |---|---|
-| Missing `providedBy` in Service Offering | Required participant link is absent |
-| Missing `termsAndConditions` | Required terms information is absent |
-| Incorrect terms hash | Terms document integrity cannot be verified |
-| Missing `registrationNumber` for legal person | Required legal identity attribute is absent |
-| Country code not in expected ISO format | Attribute value consistency error |
-| Signature chain does not connect to a Trust Anchor | Keypair-associated identity is not trusted |
-| Dataset has no `license` | Resource-level required attribute is absent |
+| 服务产品缺少 `providedBy` | 缺少必需的参与者链接 |
+| 缺少 `termsAndConditions` | 缺少必需的条款信息 |
+| 条款哈希值不正确 | 无法验证条款文档的完整性 |
+| 法人缺少 `registrationNumber` | 缺少必需的法定身份属性 |
+| 国家代码不符合预期的 ISO 格式 | 属性值一致性错误 |
+| 签名链未连接到信任锚 | 与密钥对关联的身份不受信任 |
+| 数据集没有 `license` | 缺少资源级必填属性 |
 
-These examples are simple enough to explain in a presentation while still being directly linked to the official framework.
+这些示例足够简单，易于在演示中讲解，同时又与官方框架直接相关。
 
 ---
 
-## 14. Relation to Other Groups
+## 14. 与其他小组的关系
 
-In the whole data space onboarding workflow, Group B connects to the other groups as follows:
+在整个数据空间接入流程中，B 组与其他小组的衔接如下：
 
 ```text
-Group C: defines semantic model and metadata structure
+C 组：定义语义模型和元数据结构
         ↓
-Group A: publishes data offering and supports discovery / exchange
+A 组：发布数据产品并支持发现／交换
         ↓
-Group B: verifies participant, service, and credentials for trust and compliance
+B 组：验证参与者、服务和凭证，以确保信任与合规
         ↓
-Group D: validates metadata and reports valid / invalid results
+D 组：验证元数据并报告有效／无效结果
 ```
 
-Group B therefore focuses on whether the provider and service can be trusted and whether their credentials pass Gaia-X compliance checks. It does not primarily focus on API packaging, semantic model design, or general metadata testing, although it depends on those parts in the complete onboarding workflow.
+因此，B 组重点关注提供方和服务是否可信，以及其凭证能否通过 Gaia-X 合规检查。其主要关注点并非 API 打包、语义模型设计或一般元数据测试，尽管完整的接入工作流依赖这些部分。
 
 ---
 
-## 15. Short Summary
+## 15. 简要总结
 
-Group B studies the trust and compliance layer of Gaia-X-based data space onboarding. The main task is to understand how Self-Descriptions are represented as Verifiable Credentials, how multiple credentials are submitted as a Verifiable Presentation, and how the Gaia-X Compliance Service validates them using SHACL shapes, public keys, trust anchors, revocation information, policy rules, and Registry-based reference materials. The output of this process is either a Gaia-X Compliance Credential or a validation failure report.
-
+B 组研究基于 Gaia-X 的数据空间接入流程中的信任与合规层。主要任务是理解自描述如何表示为可验证凭证、多项凭证如何作为可验证表达提交，以及 Gaia-X 合规服务如何利用 SHACL 形状、公钥、信任锚、撤销信息、政策规则和基于注册中心的参考材料对其进行验证。该流程的输出要么是 Gaia-X 合规凭证，要么是验证失败报告。
