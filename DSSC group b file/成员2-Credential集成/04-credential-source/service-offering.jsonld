@@ -1,0 +1,27 @@
+{
+    "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://w3id.org/gaia-x/development#"
+    ],
+    "type": [
+        "VerifiableCredential",
+        "ServiceOffering"
+    ],
+    "id": "urn:dssc:credential:service-offering:building-energy-hourly-v1:v0.1",
+    "issuer": "did:web:mp-operations.org",
+    "validFrom": "2026-08-15T00:00:00Z",
+    "credentialSubject": {
+        "id": "urn:dssc:service-offering:building-energy-hourly-v1",
+        "type": "gx:ServiceOffering",
+        "gx:name": "Building Energy Consumption Dataset API",
+        "gx:description": "Hourly energy consumption data for buildings in Shenzhen",
+        "gx:providedBy": {
+            "id": "did:web:mp-operations.org"
+        },
+        "gx:aggregationOf": [
+            {
+                "id": "urn:dssc:dataset:building-energy-hourly-v1"
+            }
+        ]
+    }
+}
