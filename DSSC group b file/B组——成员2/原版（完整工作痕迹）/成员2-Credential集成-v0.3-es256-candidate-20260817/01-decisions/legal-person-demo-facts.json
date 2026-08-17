@@ -1,0 +1,18 @@
+{
+    "status": "B_GROUP_DEMO_FACTS_CONFIRMED",
+    "legalName": "Energy Data Provider Ltd.",
+    "demoLegalRegistrationNumber": "DEMO-ENERGY-001",
+    "legalAddress": {
+        "countryCode": "CN",
+        "countrySubdivisionCode": "CN-GD"
+    },
+    "headquartersAddress": {
+        "countryCode": "CN",
+        "countrySubdivisionCode": "CN-GD"
+    },
+    "validFrom": "2026-08-16T00:00:00Z",
+    "validUntil": "2027-08-16T00:00:00Z",
+    "credentialMappingStatus": "WAITING_FOR_FINAL_LEGAL_PERSON_SHAPE",
+    "mockLrnCredentialIncluded": false,
+    "termsAndConditionsCredentialIncluded": false
+}
