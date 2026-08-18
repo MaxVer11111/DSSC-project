@@ -1,0 +1,29 @@
+=== Compliance API Test Response (Round 3) ===
+Case ID:       inv-07
+Environment:   dev
+Timestamp:     2026-08-18T10:20:23.581018+00:00
+Endpoint:      https://compliance.lab.gaia-x.eu/development/api/credential-offers/standard-compliance
+Method:        POST
+Query vcid:    https://gaia-x.eu/.well-known/dssc-test-inv-07-r3.jwt
+Content-Type:  application/vp+jwt
+VP-JWT SHA-256: 0EFAC18062E6DBA56768C9265E86E0714542285737A028255748AE48F4DD62F1
+JWT Header:    {"alg": "ES256", "typ": "vp+jwt", "cty": "vp", "iss": "did:web:shenyousota.github.io:dssc-toolbox", "kid": "did:web:shenyousota.github.io:dssc-toolbox#key-1"}
+JWT Payload:   {"@context": ["https://www.w3.org/ns/credentials/v2"], "type": ["VerifiablePresentation"], "id": "urn:dssc:presentation:building-energy-hourly-v1:es256-candidate", "issuer": "did:web:shenyousota.github.io:dssc-toolbox", "validFrom": "2026-08-17T17:36:17Z", "validUntil": "2026-09-16T17:36:17Z", "verifiableCredential": "[2 EnvelopedVerifiableCredential entries]"}
+
+--- Expected Failure: VP signature verification ---
+
+HTTP Status:   400
+
+--- Response Headers ---
+Date: Tue, 18 Aug 2026 10:20:23 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 151
+Connection: keep-alive
+X-Powered-By: Express
+Access-Control-Allow-Origin: *
+Accept: application/vp+jwt
+ETag: W/"97-Kyf3/5YQjXhe82/sbWZzxfgHxLA"
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+--- Response Body ---
+{"message":"The signature validation has failed","error":"Invalid verifiable presentation","statusCode":400,"errors":["signature verification failed"]}
