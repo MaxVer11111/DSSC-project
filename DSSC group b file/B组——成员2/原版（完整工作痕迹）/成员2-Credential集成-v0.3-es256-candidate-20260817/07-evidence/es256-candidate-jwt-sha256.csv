@@ -1,0 +1,13 @@
+relativePath,sha256
+05-signed/es256-candidate/legal-person.es256-candidate.vc.jwt,91A74D11291CFD9EF4563C5EB256EB33FF067B71A730015E03EBED55DE494F68
+05-signed/es256-candidate/presentation.es256-candidate.vp.jwt,59AAC864565F0519BFEED65D8AB578E6F55174EEB2EB83D2270CFDEFD1A38B09
+05-signed/es256-candidate/service-offering.es256-candidate.vc.jwt,8BA76DEC695D50A16BA7EA5C3D82C2BA8F37D3B40DFB5135C4F0DEBBFF891EEB
+06-invalid-tests/signed-es256-candidate/legal-person.expired.es256-candidate.vc.jwt,4874F920E7FF996C38B436B00BEE194607213AFE5213D33FF0C7BA2C99DFF877
+06-invalid-tests/signed-es256-candidate/legal-person.missing-name.es256-candidate.vc.jwt,B4FE7637EFF372614618224FCE49F5A8A06E0A4EEEA27E1372A3C0EA818764CF
+06-invalid-tests/signed-es256-candidate/presentation.inv-01.es256-candidate.vp.jwt,41F38BE54CD4E73BB2B06668B4F671056E864A6FC2FC446E0D9B5B5BCE9B1C57
+06-invalid-tests/signed-es256-candidate/presentation.inv-02.es256-candidate.vp.jwt,87756F89BE11EE210E97414427B1FEFD31BC116716C5F38FF7822519E221EED5
+06-invalid-tests/signed-es256-candidate/presentation.inv-03.es256-candidate.vp.jwt,B82A8171C140A640BB3E342D198DE4A251E39013C4086892EC581FD8A165B6C4
+06-invalid-tests/signed-es256-candidate/presentation.inv-04.es256-candidate.vp.jwt,6900DBB36FDFCB81FDFF7DDF2E006C3B8FC2F463919F74EE864DEDF368E01622
+06-invalid-tests/signed-es256-candidate/presentation.inv-07.tampered-signature.es256-candidate.vp.jwt,0EFAC18062E6DBA56768C9265E86E0714542285737A028255748AE48F4DD62F1
+06-invalid-tests/signed-es256-candidate/service-offering.dataset-mismatch.es256-candidate.vc.jwt,63C6A38636E287D1715B9E67A17E7910BEB59D3D548E64D200BF0DF074D4EAB8
+06-invalid-tests/signed-es256-candidate/service-offering.provider-mismatch.es256-candidate.vc.jwt,A61B86F3CF4FB9B200F6CB230E49FC32153F1CE2A476C4CD03E9930B70822F40

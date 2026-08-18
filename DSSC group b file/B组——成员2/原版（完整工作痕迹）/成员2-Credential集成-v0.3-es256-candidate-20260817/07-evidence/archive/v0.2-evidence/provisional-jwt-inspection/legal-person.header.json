@@ -1,0 +1,7 @@
+{
+    "alg":  "RS256",
+    "typ":  "vc+jwt",
+    "cty":  "vc",
+    "iss":  "did:web:mp-operations.org",
+    "kid":  "did:web:mp-operations.org#dev-key-1"
+}
