@@ -1,7 +1,0 @@
-{
-  "alg": "ES256",
-  "typ": "vc+jwt",
-  "cty": "vc",
-  "iss": "did:web:shenyousota.github.io:dssc-toolbox",
-  "kid": "did:web:shenyousota.github.io:dssc-toolbox#key-1"
-}
