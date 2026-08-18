@@ -1,0 +1,8 @@
+# Never commit local signing secrets.
+local-secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jwk
+.env
