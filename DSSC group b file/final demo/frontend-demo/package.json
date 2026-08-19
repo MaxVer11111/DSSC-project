@@ -1,0 +1,26 @@
+{
+  "name": "dssc-compliance-validation-demo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "copy-assets": "node scripts/copy-assets.mjs",
+    "predev": "npm run copy-assets",
+    "dev": "vite",
+    "prebuild": "npm run copy-assets",
+    "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "verify": "node scripts/verify-build.mjs"
+  },
+  "dependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.10",
+    "@types/react-dom": "19.1.7",
+    "@vitejs/plugin-react": "5.0.2",
+    "typescript": "5.9.2",
+    "vite": "7.1.3"
+  }
+}
